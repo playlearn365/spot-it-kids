@@ -117,16 +117,17 @@
                     "🐝"
                 ]
             },
-            fruits: {
-                id: 'fruits',
-                name: "美味蔬果",
-                icon: "🍎",
+            foods: {
+                id: 'foods',
+                name: "美味食物",
+                icon: "🍔",
                 pool: [
-                    "🍎", "🍐", "🍊", "🍌", "🍉", 
-                    "🍇", "🍓", "🫐", "🍒", "🍑", 
-                    "🥭", "🍍", "🥝", "🍅", "🍆", 
-                    "🥑", "🥦", "🌽", "🥕", "🍄", 
-                    "🥜"
+                    // 使用相容性較高的 Unicode 6.0 圖示，避免出現方框
+                    "🍎", "🍐", "🍊", "🍋", "🍌", 
+                    "🍉", "🍇", "🍓", "🍈", "🍒", 
+                    "🍑", "🍍", "🍅", "🍆", "🌽", 
+                    "🍄", "🍩", "🍔", "🍕", "🍟", 
+                    "🍦"
                 ]
             },
             objects: {
@@ -242,9 +243,10 @@
             }, [symbols, fontSize]);
 
             return (
-                <div className={`relative bg-white rounded-full shadow-xl border-4 border-yellow-200 card-enter
+                // 修改處：將 border-yellow-200 改為 border-purple-400，並將 isTarget 的 bg-blue-50 改為 bg-purple-50
+                <div className={`relative bg-white rounded-full shadow-xl border-4 border-purple-400 card-enter
                     w-64 h-64 md:w-80 md:h-80 flex-shrink-0 mx-auto transition-all duration-300
-                    ${isTarget ? 'bg-blue-50' : ''}`}
+                    ${isTarget ? 'bg-purple-50' : ''}`}
                 >
                     {symbols.map((symbol, idx) => (
                         <div
@@ -292,7 +294,7 @@
 
         const App = () => {
             const [gameState, setGameState] = React.useState('menu'); // menu, playing, end
-            const [currentThemeId, setCurrentThemeId] = React.useState('animals'); // animals, fruits, objects
+            const [currentThemeId, setCurrentThemeId] = React.useState('animals'); // animals, foods, objects
             const [difficulty, setDifficulty] = React.useState(3); // 3, 4, 5
             
             const [score, setScore] = React.useState(0);
