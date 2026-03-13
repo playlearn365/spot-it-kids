@@ -4,532 +4,393 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>幼兒版 Spot It - 找找看</title>
-    
-    <!-- React & ReactDOM -->
     <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
     <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
-    
-    <!-- Babel for JSX -->
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-    
-    <!-- Tailwind CSS -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    
-    <!-- Google Fonts: Cute font -->
-    <link href="https://fonts.googleapis.com/css2?family=Fredoka+One&family=Zen+Maru+Gothic:wght@500;700&display=swap" rel="stylesheet">
-    
-    <!-- Confetti for rewards -->
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
-
+    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@700;800;900&display=swap" rel="stylesheet">
     <style>
-        body {
-            font-family: 'Zen Maru Gothic', sans-serif;
-            background-color: #FFFBEB; /* Soft Yellow */
-            overscroll-behavior: none;
-            /* 使用 dvh 解決手機瀏覽器網址列問題 */
-            height: 100dvh; 
-            overflow: hidden; /* 防止整體頁面彈性捲動 */
-        }
-        
-        .game-title {
-            font-family: 'Fredoka One', cursive;
-            text-shadow: 2px 2px 0px #FCD34D;
-        }
-
-        /* Card Animation */
-        .card-enter {
-            animation: popIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-        }
-
-        @keyframes popIn {
-            0% { transform: scale(0.5); opacity: 0; }
-            100% { transform: scale(1); opacity: 1; }
-        }
-
-        /* Correct Match Animation */
-        .match-success {
-            animation: bounce 0.5s infinite;
-            filter: drop-shadow(0 0 10px gold);
-        }
-
-        @keyframes bounce {
-            0%, 100% { transform: scale(1); }
-            50% { transform: scale(1.4); }
-        }
-
-        /* Wrong Match Animation */
-        .shake {
-            animation: shake 0.5s cubic-bezier(.36,.07,.19,.97) both;
-        }
-
-        @keyframes shake {
-            10%, 90% { transform: translate3d(-2px, 0, 0); }
-            20%, 80% { transform: translate3d(4px, 0, 0); }
-            30%, 50%, 70% { transform: translate3d(-8px, 0, 0); }
-            40%, 60% { transform: translate3d(8px, 0, 0); }
-        }
-
-        /* Emoji Button Styles */
-        .emoji-btn {
-            transition: transform 0.2s;
-            cursor: pointer;
-            user-select: none;
-            -webkit-tap-highlight-color: transparent;
-        }
-        
-        .emoji-btn:active {
-            transform: scale(0.9);
-        }
-
-        .emoji-float {
-            position: absolute;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-        }
-        
-        .fade-in {
-            animation: fadeIn 0.5s ease-in;
-        }
-        
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-
-        /* 自定義捲軸樣式，讓捲軸在手機上不明顯但可用 */
-        .custom-scroll::-webkit-scrollbar {
-            width: 4px;
-        }
-        .custom-scroll::-webkit-scrollbar-thumb {
-            background-color: rgba(251, 191, 36, 0.5);
-            border-radius: 4px;
-        }
+        *{box-sizing:border-box;margin:0;padding:0}
+        html,body{height:100%;overflow:hidden;background:#FFF8E7;font-family:'Nunito',sans-serif}
+        #root{height:100%;display:flex;flex-direction:column}
+        @keyframes popIn{0%{transform:scale(0.3) rotate(-10deg);opacity:0}70%{transform:scale(1.08) rotate(2deg)}100%{transform:scale(1) rotate(0deg);opacity:1}}
+        @keyframes bounce{0%,100%{transform:scale(1)}50%{transform:scale(1.35)}}
+        @keyframes shake{10%,90%{transform:translate(-3px,0)}20%,80%{transform:translate(5px,0)}30%,50%,70%{transform:translate(-8px,0)}40%,60%{transform:translate(8px,0)}}
+        @keyframes fadeSlideIn{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
+        @keyframes correctFlash{0%,100%{filter:drop-shadow(0 0 0px transparent)}50%{filter:drop-shadow(0 0 14px #FFD700)}}
+        .card-enter{animation:popIn 0.45s cubic-bezier(0.175,0.885,0.32,1.275) both}
+        .shake-anim{animation:shake 0.45s both}
+        .fade-in{animation:fadeSlideIn 0.4s ease both}
+        .correct-glow{animation:correctFlash 0.6s ease infinite, bounce 0.5s ease infinite}
+        .icon-btn{cursor:pointer;user-select:none;-webkit-tap-highlight-color:transparent;transition:transform 0.15s}
+        .icon-btn:active{transform:scale(0.88)!important}
+        .btn-main{background:linear-gradient(135deg,#FF8C42,#FF6B6B);color:#fff;border:none;border-radius:50px;font-family:'Nunito',sans-serif;font-weight:800;cursor:pointer;transition:transform 0.15s,box-shadow 0.15s;box-shadow:0 4px 16px rgba(255,107,107,0.4)}
+        .btn-main:hover{transform:scale(1.04);box-shadow:0 6px 20px rgba(255,107,107,0.5)}
+        .btn-main:active{transform:scale(0.96)}
+        .btn-secondary{background:#fff;color:#aaa;border:2px solid #eee;border-radius:50px;font-family:'Nunito',sans-serif;font-weight:700;cursor:pointer;transition:all 0.15s}
+        .btn-secondary:hover{background:#f5f5f5;color:#888}
+        .diff-btn{background:#fff;border:3px solid #FFD93D;border-radius:24px;cursor:pointer;transition:all 0.18s;font-family:'Nunito',sans-serif;box-shadow:0 3px 12px rgba(0,0,0,0.08)}
+        .diff-btn:hover{transform:translateY(-3px) scale(1.04);border-color:#FF8C42;box-shadow:0 8px 24px rgba(255,140,66,0.25)}
+        .diff-btn:active{transform:scale(0.96)}
+        .theme-btn{background:#fff;border:3px solid #e5e5e5;border-radius:18px;cursor:pointer;transition:all 0.18s;font-family:'Nunito',sans-serif}
+        .theme-btn.active{background:#FFF3D0;border-color:#FFD93D;box-shadow:inset 0 2px 8px rgba(255,217,61,0.3)}
+        .theme-btn:hover{transform:scale(1.04);border-color:#FFD93D}
+        .card-circle{border-radius:50%;box-shadow:0 8px 32px rgba(0,0,0,0.13);position:relative;flex-shrink:0}
+        .score-pill{background:#fff;border-radius:50px;padding:6px 18px;font-weight:800;color:#FF6B6B;box-shadow:0 2px 10px rgba(0,0,0,0.1)}
     </style>
 </head>
-<body class="bg-yellow-50 flex flex-col text-gray-800">
+<body>
+<div id="root"></div>
+<script type="text/babel">
 
-    <div id="root" class="flex-grow flex flex-col h-full overflow-hidden"></div>
+// ─────────────────────────────────────────────
+// SVG ICON DEFINITIONS  (21 icons × 3 themes)
+// Each icon is a React component returning an <svg>
+// ─────────────────────────────────────────────
 
-    <script type="text/babel">
-        // --- 遊戲資料與邏輯 ---
+const ICON_SIZE = 56; // base render size (will be scaled via transform)
 
-        // 定義不同的圖案主題 (每個主題需至少 21 個圖案)
-        const THEMES = {
-            animals: {
-                id: 'animals',
-                name: "可愛動物",
-                icon: "🐶",
-                pool: [
-                    "🐶", "🐱", "🐭", "🐹", "🐰", 
-                    "🦊", "🐻", "🐼", "🐨", "🐯", 
-                    "🦁", "🐮", "🐷", "🐸", "🐵", 
-                    "🐔", "🐧", "🐦", "🐤", "🦆", 
-                    "🐝"
-                ]
-            },
-            foods: {
-                id: 'foods',
-                name: "美味食物",
-                icon: "🍔",
-                pool: [
-                    // 使用相容性較高的 Unicode 6.0 圖示，避免出現方框
-                    "🍎", "🍐", "🍊", "🍋", "🍌", 
-                    "🍉", "🍇", "🍓", "🍈", "🍒", 
-                    "🍑", "🍍", "🍅", "🍆", "🌽", 
-                    "🍄", "🍩", "🍔", "🍕", "🍟", 
-                    "🍦"
-                ]
-            },
-            objects: {
-                id: 'objects',
-                name: "生活物品",
-                icon: "🚗",
-                pool: [
-                    "🚗", "🚓", "🚑", "🚒", "🚲", 
-                    "🚂", "✈️", "🚀", "🚁", "⚽", 
-                    "🏀", "⚾", "🎾", "🎸", "🎺", 
-                    "🎻", "🥁", "⌚", "📷", "📺", 
-                    "🎈"
-                ]
-            }
-        };
+const icons = {
+  // ── ANIMALS ──────────────────────────────
+  cat: ({s=ICON_SIZE}) => <svg width={s} height={s} viewBox="0 0 56 56"><circle cx="28" cy="32" r="18" fill="#FFB347"/><polygon points="10,18 18,30 6,30" fill="#FFB347"/><polygon points="46,18 38,30 50,30" fill="#FFB347"/><circle cx="22" cy="30" r="3.5" fill="#fff"/><circle cx="34" cy="30" r="3.5" fill="#fff"/><circle cx="22" cy="30" r="2" fill="#333"/><circle cx="34" cy="30" r="2" fill="#333"/><path d="M24 37 Q28 41 32 37" stroke="#cc6633" strokeWidth="1.8" fill="none" strokeLinecap="round"/><ellipse cx="28" cy="36" rx="3" ry="2" fill="#FFD0A0"/></svg>,
 
-        // 不同難度的數學模型
-        // 使用 clamp() 讓字體大小隨視窗縮放
-        const GAME_MODES = {
-            3: {
-                name: "簡單",
-                desc: "3 個圖案",
-                icon: "🐣",
-                fontSize: "clamp(3rem, 15vw, 4.5rem)", 
-                data: [ // Order 2 (Fano Plane) - 7 cards, 7 symbols
-                    [0,1,2], [0,3,4], [0,5,6], 
-                    [1,3,5], [1,4,6], 
-                    [2,3,6], [2,4,5]
-                ]
-            },
-            4: {
-                name: "中等",
-                desc: "4 個圖案",
-                icon: "🐰",
-                fontSize: "clamp(2.5rem, 12vw, 4rem)",
-                data: [ // Order 3 - 13 cards, 13 symbols
-                    [0,1,2,3],
-                    [0,4,5,6], [0,7,8,9], [0,10,11,12],
-                    [1,4,7,10], [1,5,8,11], [1,6,9,12],
-                    [2,4,8,12], [2,5,9,10], [2,6,7,11],
-                    [3,4,9,11], [3,5,7,12], [3,6,8,10]
-                ]
-            },
-            5: {
-                name: "挑戰",
-                desc: "5 個圖案",
-                icon: "🦁",
-                fontSize: "clamp(2rem, 10vw, 3.5rem)",
-                data: [ // Order 4 - 21 cards, 21 symbols (Verified)
-                    [0, 1, 2, 3, 4],
-                    [0, 5, 6, 7, 8], [0, 9, 10, 11, 12], [0, 13, 14, 15, 16], [0, 17, 18, 19, 20],
-                    [1, 5, 9, 13, 17], [1, 6, 10, 14, 18], [1, 7, 11, 15, 19], [1, 8, 12, 16, 20],
-                    [2, 5, 10, 15, 20], [2, 6, 9, 16, 19], [2, 7, 12, 13, 18], [2, 8, 11, 14, 17],
-                    [3, 5, 11, 16, 18], [3, 6, 12, 15, 17], [3, 7, 9, 14, 20], [3, 8, 10, 13, 19],
-                    [4, 5, 12, 14, 19], [4, 6, 11, 13, 20], [4, 7, 10, 16, 17], [4, 8, 9, 15, 18]
-                ]
-            }
-        };
+  dog: ({s=ICON_SIZE}) => <svg width={s} height={s} viewBox="0 0 56 56"><ellipse cx="28" cy="34" rx="17" ry="14" fill="#C8864A"/><ellipse cx="16" cy="25" rx="7" ry="10" fill="#C8864A"/><ellipse cx="40" cy="25" rx="7" ry="10" fill="#C8864A"/><circle cx="22" cy="32" r="3" fill="#fff"/><circle cx="34" cy="32" r="3" fill="#fff"/><circle cx="22" cy="32" r="1.8" fill="#222"/><circle cx="34" cy="32" r="1.8" fill="#222"/><ellipse cx="28" cy="37" rx="5" ry="3.5" fill="#e8a070"/><path d="M25 39 Q28 43 31 39" stroke="#c06030" strokeWidth="1.6" fill="none" strokeLinecap="round"/></svg>,
 
-        // 輔助函式：洗牌
-        const shuffle = (array) => {
-            let currentIndex = array.length, randomIndex;
-            while (currentIndex != 0) {
-                randomIndex = Math.floor(Math.random() * currentIndex);
-                currentIndex--;
-                [array[currentIndex], array[randomIndex]] = [array[randomIndex], array[currentIndex]];
-            }
-            return array;
-        };
+  bunny: ({s=ICON_SIZE}) => <svg width={s} height={s} viewBox="0 0 56 56"><circle cx="28" cy="34" r="16" fill="#F0E0FF"/><ellipse cx="20" cy="13" rx="5" ry="13" fill="#F0E0FF"/><ellipse cx="20" cy="13" rx="3" ry="10" fill="#FFB0C8"/><ellipse cx="36" cy="13" rx="5" ry="13" fill="#F0E0FF"/><ellipse cx="36" cy="13" rx="3" ry="10" fill="#FFB0C8"/><circle cx="22" cy="33" r="3" fill="#fff"/><circle cx="34" cy="33" r="3" fill="#fff"/><circle cx="22" cy="33" r="1.8" fill="#333"/><circle cx="34" cy="33" r="1.8" fill="#333"/><circle cx="28" cy="37" r="3" fill="#FFB0C8"/></svg>,
 
-        // 輔助函式：產生隨機旋轉與位置微調
-        const getRandomStyle = (index, total, baseFontSize) => {
-            // 基礎位置演算法
-            let top = 50;
-            let left = 50;
-            let radius = 32; 
+  bear: ({s=ICON_SIZE}) => <svg width={s} height={s} viewBox="0 0 56 56"><circle cx="28" cy="33" r="17" fill="#8B6040"/><circle cx="16" cy="20" r="7" fill="#8B6040"/><circle cx="40" cy="20" r="7" fill="#8B6040"/><circle cx="16" cy="20" r="4" fill="#A07050"/><circle cx="40" cy="20" r="4" fill="#A07050"/><circle cx="22" cy="32" r="3.5" fill="#fff"/><circle cx="34" cy="32" r="3.5" fill="#fff"/><circle cx="22" cy="32" r="2" fill="#333"/><circle cx="34" cy="32" r="2" fill="#333"/><ellipse cx="28" cy="38" rx="6" ry="4" fill="#A07050"/><circle cx="28" cy="36" r="2.5" fill="#6B4030"/></svg>,
 
-            // 根據圖案數量調整佈局半徑
-            if (total === 3) radius = 25;
-            if (total === 4) radius = 30;
+  fox: ({s=ICON_SIZE}) => <svg width={s} height={s} viewBox="0 0 56 56"><polygon points="28,8 16,26 40,26" fill="#FF6B20"/><circle cx="28" cy="34" r="16" fill="#FF6B20"/><circle cx="28" cy="38" r="7" fill="#FFD0A0"/><circle cx="21" cy="32" r="3" fill="#fff"/><circle cx="35" cy="32" r="3" fill="#fff"/><circle cx="21" cy="32" r="1.8" fill="#333"/><circle cx="35" cy="32" r="1.8" fill="#333"/><circle cx="28" cy="38" r="2" fill="#d04010"/></svg>,
 
-            if (index > 0) {
-                // 第一個放中間，剩下的圍一圈
-                // total - 1 個在外圈
-                const slice = 360 / (total - 1);
-                const angle = ((index - 1) * slice) * (Math.PI / 180);
-                top = 50 + radius * Math.sin(angle);
-                left = 50 + radius * Math.cos(angle);
-            }
+  pig: ({s=ICON_SIZE}) => <svg width={s} height={s} viewBox="0 0 56 56"><circle cx="28" cy="32" r="18" fill="#FFB3C1"/><circle cx="17" cy="22" r="6" fill="#FFB3C1"/><circle cx="39" cy="22" r="6" fill="#FFB3C1"/><ellipse cx="28" cy="37" rx="7" ry="5" fill="#FF8FAB"/><circle cx="26" cy="37" r="2" fill="#d06070"/><circle cx="30" cy="37" r="2" fill="#d06070"/><circle cx="21" cy="30" r="3" fill="#fff"/><circle cx="35" cy="30" r="3" fill="#fff"/><circle cx="21" cy="30" r="1.8" fill="#333"/><circle cx="35" cy="30" r="1.8" fill="#333"/></svg>,
 
-            // 加入隨機偏移
-            const randomOffset = 5; 
-            top += (Math.random() * randomOffset * 2) - randomOffset;
-            left += (Math.random() * randomOffset * 2) - randomOffset;
+  chick: ({s=ICON_SIZE}) => <svg width={s} height={s} viewBox="0 0 56 56"><circle cx="28" cy="33" r="16" fill="#FFE04A"/><circle cx="28" cy="18" r="10" fill="#FFE04A"/><polygon points="28,22 23,28 33,28" fill="#FF9500"/><circle cx="22" cy="16" r="3" fill="#333"/><circle cx="34" cy="16" r="3" fill="#333"/><ellipse cx="18" cy="36" rx="5" ry="3" fill="#FFD000" transform="rotate(-20,18,36)"/><ellipse cx="38" cy="36" rx="5" ry="3" fill="#FFD000" transform="rotate(20,38,36)"/></svg>,
 
-            // 隨機旋轉
-            const rotate = Math.floor(Math.random() * 360);
-            // 隨機大小 (0.85 ~ 1.15倍) - 縮小變異範圍避免重疊
-            const scale = 0.85 + Math.random() * 0.3;
+  frog: ({s=ICON_SIZE}) => <svg width={s} height={s} viewBox="0 0 56 56"><circle cx="28" cy="34" r="16" fill="#5DBB63"/><circle cx="16" cy="21" r="8" fill="#5DBB63"/><circle cx="40" cy="21" r="8" fill="#5DBB63"/><circle cx="16" cy="21" r="4.5" fill="#fff"/><circle cx="40" cy="21" r="4.5" fill="#fff"/><circle cx="16" cy="21" r="3" fill="#1A1A1A"/><circle cx="40" cy="21" r="3" fill="#1A1A1A"/><path d="M20 38 Q28 44 36 38" stroke="#2A8B30" strokeWidth="2" fill="none" strokeLinecap="round"/></svg>,
 
-            return {
-                top: `${top}%`,
-                left: `${left}%`,
-                transform: `translate(-50%, -50%) rotate(${rotate}deg) scale(${scale})`,
-                fontSize: baseFontSize
-            };
-        };
+  panda: ({s=ICON_SIZE}) => <svg width={s} height={s} viewBox="0 0 56 56"><circle cx="28" cy="32" r="18" fill="#fff"/><circle cx="17" cy="22" r="7" fill="#333"/><circle cx="39" cy="22" r="7" fill="#333"/><ellipse cx="20" cy="33" rx="5" ry="4" fill="#333"/><ellipse cx="36" cy="33" rx="5" ry="4" fill="#333"/><circle cx="20" cy="33" r="2.5" fill="#fff"/><circle cx="36" cy="33" r="2.5" fill="#fff"/><circle cx="20" cy="33" r="1.5" fill="#111"/><circle cx="36" cy="33" r="1.5" fill="#111"/><circle cx="28" cy="38" r="3" fill="#ddd"/></svg>,
 
-        // --- 元件 ---
+  penguin: ({s=ICON_SIZE}) => <svg width={s} height={s} viewBox="0 0 56 56"><ellipse cx="28" cy="33" rx="14" ry="18" fill="#222"/><ellipse cx="28" cy="35" rx="8" ry="12" fill="#fff"/><circle cx="23" cy="25" r="3" fill="#fff"/><circle cx="33" cy="25" r="3" fill="#fff"/><circle cx="23" cy="25" r="1.8" fill="#111"/><circle cx="33" cy="25" r="1.8" fill="#111"/><polygon points="28,31 25,34 31,34" fill="#FF9500"/><ellipse cx="16" cy="33" rx="5" ry="9" fill="#222" transform="rotate(-15,16,33)"/><ellipse cx="40" cy="33" rx="5" ry="9" fill="#222" transform="rotate(15,40,33)"/></svg>,
 
-        const Card = ({ symbols, onSymbolClick, isTarget, highlight, fontSize }) => {
-            const layoutStyles = React.useMemo(() => {
-                return symbols.map((_, idx) => getRandomStyle(idx, symbols.length, fontSize));
-            }, [symbols, fontSize]);
+  lion: ({s=ICON_SIZE}) => <svg width={s} height={s} viewBox="0 0 56 56"><circle cx="28" cy="30" r="20" fill="#C8860A" opacity="0.5"/><circle cx="28" cy="30" r="14" fill="#F0A020"/><circle cx="22" cy="29" r="3" fill="#fff"/><circle cx="34" cy="29" r="3" fill="#fff"/><circle cx="22" cy="29" r="1.8" fill="#333"/><circle cx="34" cy="29" r="1.8" fill="#333"/><ellipse cx="28" cy="34" rx="5" ry="3.5" fill="#e88010"/><circle cx="28" cy="32" r="2.5" fill="#A05010"/><path d="M24 37 Q28 41 32 37" stroke="#904010" strokeWidth="1.8" fill="none" strokeLinecap="round"/></svg>,
 
-            return (
-                // 卡片尺寸
-                <div className={`relative bg-white rounded-full shadow-xl border-4 border-purple-400 card-enter
-                    w-52 h-52 sm:w-64 sm:h-64 md:w-80 md:h-80 flex-shrink-0 mx-auto transition-all duration-300
-                    ${isTarget ? 'bg-purple-50' : ''}`}
-                >
-                    {symbols.map((symbol, idx) => (
-                        <div
-                            key={idx}
-                            className={`emoji-float emoji-btn hover:scale-110
-                                ${highlight === symbol ? 'match-success' : ''}`}
-                            style={layoutStyles[idx]}
-                            onClick={(e) => {
-                                e.stopPropagation();
-                                onSymbolClick(symbol);
-                            }}
-                        >
-                            {symbol}
-                        </div>
-                    ))}
-                </div>
-            );
-        };
+  // ── FOODS ────────────────────────────────
+  apple: ({s=ICON_SIZE}) => <svg width={s} height={s} viewBox="0 0 56 56"><path d="M28 14 Q34 6 40 10" stroke="#4A9A30" strokeWidth="2.5" fill="none" strokeLinecap="round"/><path d="M14 24 Q10 14 20 13 Q24 12 28 16 Q32 12 36 13 Q46 14 42 24 Q40 36 28 46 Q16 36 14 24Z" fill="#FF4444"/><path d="M20 16 Q18 24 22 32" stroke="#FF7777" strokeWidth="3" fill="none" strokeLinecap="round" opacity="0.5"/></svg>,
 
-        const ThemeButton = ({ theme, isSelected, onClick }) => (
-            <button 
-                onClick={onClick}
-                className={`flex flex-col items-center justify-center p-2 rounded-2xl transition-all w-24 md:w-32 flex-shrink-0
-                    ${isSelected 
-                        ? 'bg-yellow-200 border-4 border-yellow-400 shadow-inner scale-95' 
-                        : 'bg-white border-2 border-yellow-100 shadow-md hover:scale-105'}`}
-            >
-                <div className="text-3xl md:text-4xl mb-1">{theme.icon}</div>
-                <div className={`font-bold text-sm md:text-base ${isSelected ? 'text-yellow-800' : 'text-gray-600'}`}>
-                    {theme.name}
-                </div>
-            </button>
+  banana: ({s=ICON_SIZE}) => <svg width={s} height={s} viewBox="0 0 56 56"><path d="M16 42 Q12 26 20 16 Q28 8 40 12 Q44 14 42 18 Q38 16 30 20 Q20 26 22 42Z" fill="#FFE048"/><path d="M18 40 Q14 26 22 17 Q30 10 40 14" stroke="#F0C020" strokeWidth="2.5" fill="none" strokeLinecap="round"/></svg>,
+
+  strawberry: ({s=ICON_SIZE}) => <svg width={s} height={s} viewBox="0 0 56 56"><path d="M28 12 Q34 10 36 14 Q38 10 42 12 Q46 18 42 24 Q38 32 28 46 Q18 32 14 24 Q10 18 14 12 Q18 10 20 14 Q22 10 28 12Z" fill="#FF3355"/><circle cx="22" cy="24" r="2" fill="#FFB0B8"/><circle cx="30" cy="20" r="2" fill="#FFB0B8"/><circle cx="33" cy="30" r="2" fill="#FFB0B8"/><path d="M24 12 Q28 8 32 12" stroke="#4A9A30" strokeWidth="2.5" fill="none" strokeLinecap="round"/></svg>,
+
+  watermelon: ({s=ICON_SIZE}) => <svg width={s} height={s} viewBox="0 0 56 56"><path d="M10 38 Q10 16 28 12 Q46 16 46 38Z" fill="#FF4466"/><path d="M10 38 Q10 36 28 36 Q46 36 46 38Z" fill="#5DBB63"/><path d="M13 36 Q13 18 28 14 Q43 18 43 36Z" fill="#FF6680"/><circle cx="22" cy="26" r="2" fill="#222"/><circle cx="30" cy="22" r="2" fill="#222"/><circle cx="34" cy="30" r="2" fill="#222"/></svg>,
+
+  cake: ({s=ICON_SIZE}) => <svg width={s} height={s} viewBox="0 0 56 56"><rect x="10" y="32" width="36" height="16" rx="4" fill="#FFB3C1"/><rect x="14" y="24" width="28" height="10" rx="3" fill="#FFF0A0"/><rect x="18" y="38" width="4" height="8" rx="2" fill="#FF6699"/><rect x="26" y="38" width="4" height="8" rx="2" fill="#66AAFF"/><rect x="34" y="38" width="4" height="8" rx="2" fill="#FF9933"/><rect x="24" y="16" width="4" height="10" rx="2" fill="#A07050"/><ellipse cx="26" cy="15" rx="3" ry="4" fill="#FF6622"/><circle cx="26" cy="12" r="1.5" fill="#FFD700"/></svg>,
+
+  icecream: ({s=ICON_SIZE}) => <svg width={s} height={s} viewBox="0 0 56 56"><polygon points="28,50 18,28 38,28" fill="#F0C060"/><ellipse cx="28" cy="26" rx="14" ry="10" fill="#FF8FAB"/><ellipse cx="22" cy="22" rx="9" ry="7" fill="#FF6B90" opacity="0.8"/><ellipse cx="34" cy="22" rx="8" ry="6" fill="#FFB0C8" opacity="0.6"/><circle cx="30" cy="20" r="3" fill="#FFD700"/><circle cx="22" cy="24" r="2" fill="#FF3366" opacity="0.7"/></svg>,
+
+  pizza: ({s=ICON_SIZE}) => <svg width={s} height={s} viewBox="0 0 56 56"><path d="M28 10 L8 44 Q28 50 48 44 Z" fill="#FFC850"/><path d="M28 10 L8 44 Q18 46 28 46Z" fill="#FF9B20" opacity="0.5"/><circle cx="22" cy="36" r="3.5" fill="#FF3333"/><circle cx="32" cy="30" r="3.5" fill="#FF3333"/><circle cx="28" cy="40" r="3" fill="#FF3333"/><path d="M8 44 Q28 50 48 44" stroke="#CC7700" strokeWidth="3" fill="none"/></svg>,
+
+  donut: ({s=ICON_SIZE}) => <svg width={s} height={s} viewBox="0 0 56 56"><circle cx="28" cy="28" r="20" fill="#F0C060"/><circle cx="28" cy="28" r="9" fill="#FFF8E7"/><circle cx="28" cy="28" r="20" fill="none" stroke="#E0A040" strokeWidth="1"/><path d="M12 22 Q28 14 44 22" stroke="#FF6699" strokeWidth="5" strokeLinecap="round" fill="none" opacity="0.8"/><circle cx="20" cy="17" r="2.5" fill="#66DDFF"/><circle cx="34" cy="16" r="2.5" fill="#FF9966"/><circle cx="40" cy="22" r="2.5" fill="#AAFF66"/></svg>,
+
+  carrot: ({s=ICON_SIZE}) => <svg width={s} height={s} viewBox="0 0 56 56"><path d="M28 44 Q20 32 22 18 Q26 10 30 18 Q32 32 28 44Z" fill="#FF7722"/><path d="M22 18 Q18 14 14 12 Q16 18 22 20"/><path d="M28 14 Q28 8 26 6 Q26 12 26 16"/><path d="M30 18 Q36 14 40 12 Q38 18 32 20"/><path d="M14 12 Q18 14 22 20" stroke="#5DBB63" strokeWidth="3" fill="none" strokeLinecap="round"/><path d="M26 6 Q26 10 26 16" stroke="#5DBB63" strokeWidth="3" fill="none" strokeLinecap="round"/><path d="M40 12 Q36 14 30 20" stroke="#5DBB63" strokeWidth="3" fill="none" strokeLinecap="round"/></svg>,
+
+  grape: ({s=ICON_SIZE}) => <svg width={s} height={s} viewBox="0 0 56 56"><path d="M28 10 Q28 16 28 20" stroke="#6A4C9C" strokeWidth="2.5" fill="none"/><path d="M28 10 Q22 8 18 12" stroke="#5DBB63" strokeWidth="2.5" fill="none" strokeLinecap="round"/><circle cx="20" cy="22" r="7" fill="#9B6BC4"/><circle cx="36" cy="22" r="7" fill="#9B6BC4"/><circle cx="28" cy="30" r="7" fill="#7A4BA0"/><circle cx="14" cy="32" r="7" fill="#9B6BC4"/><circle cx="42" cy="32" r="7" fill="#9B6BC4"/><circle cx="22" cy="42" r="7" fill="#7A4BA0"/><circle cx="34" cy="42" r="7" fill="#7A4BA0"/></svg>,
+
+  corn: ({s=ICON_SIZE}) => <svg width={s} height={s} viewBox="0 0 56 56"><ellipse cx="28" cy="30" rx="12" ry="18" fill="#FFD700"/><path d="M20 18 Q16 10 14 8 Q22 12 22 20" fill="#5DBB63" opacity="0.9"/><path d="M28 16 Q28 8 28 6 Q32 10 30 18" fill="#5DBB63" opacity="0.9"/><path d="M36 18 Q40 10 42 8 Q34 12 34 20" fill="#5DBB63" opacity="0.9"/><ellipse cx="24" cy="26" rx="2.5" ry="3" fill="#FFE55A"/><ellipse cx="30" cy="24" rx="2.5" ry="3" fill="#FFE55A"/><ellipse cx="36" cy="26" rx="2.5" ry="3" fill="#FFE55A"/><ellipse cx="24" cy="32" rx="2.5" ry="3" fill="#F0C000"/><ellipse cx="30" cy="30" rx="2.5" ry="3" fill="#F0C000"/><ellipse cx="36" cy="32" rx="2.5" ry="3" fill="#F0C000"/><ellipse cx="24" cy="38" rx="2.5" ry="3" fill="#FFE55A"/><ellipse cx="30" cy="36" rx="2.5" ry="3" fill="#FFE55A"/><ellipse cx="36" cy="38" rx="2.5" ry="3" fill="#FFE55A"/></svg>,
+
+  // ── OBJECTS ──────────────────────────────
+  star: ({s=ICON_SIZE}) => <svg width={s} height={s} viewBox="0 0 56 56"><polygon points="28,8 33,22 48,22 36,31 40,46 28,37 16,46 20,31 8,22 23,22" fill="#FFD700" stroke="#E8A000" strokeWidth="1.5" strokeLinejoin="round"/></svg>,
+
+  heart: ({s=ICON_SIZE}) => <svg width={s} height={s} viewBox="0 0 56 56"><path d="M28 44 Q10 32 10 20 Q10 10 20 10 Q24 10 28 16 Q32 10 36 10 Q46 10 46 20 Q46 32 28 44Z" fill="#FF3355"/><path d="M16 14 Q12 18 14 26" stroke="#FF6677" strokeWidth="3" fill="none" strokeLinecap="round" opacity="0.6"/></svg>,
+
+  rainbow: ({s=ICON_SIZE}) => <svg width={s} height={s} viewBox="0 0 56 56"><path d="M8 38 Q8 16 28 16 Q48 16 48 38" stroke="#FF3333" strokeWidth="4" fill="none" strokeLinecap="round"/><path d="M11 38 Q11 19 28 19 Q45 19 45 38" stroke="#FF9900" strokeWidth="4" fill="none" strokeLinecap="round"/><path d="M14 38 Q14 22 28 22 Q42 22 42 38" stroke="#FFE000" strokeWidth="4" fill="none" strokeLinecap="round"/><path d="M17 38 Q17 25 28 25 Q39 25 39 38" stroke="#33CC33" strokeWidth="4" fill="none" strokeLinecap="round"/><path d="M20 38 Q20 28 28 28 Q36 28 36 38" stroke="#3399FF" strokeWidth="4" fill="none" strokeLinecap="round"/><path d="M23 38 Q23 31 28 31 Q33 31 33 38" stroke="#9933FF" strokeWidth="4" fill="none" strokeLinecap="round"/><ellipse cx="14" cy="40" rx="8" ry="5" fill="#fff" opacity="0.85"/><ellipse cx="42" cy="40" rx="8" ry="5" fill="#fff" opacity="0.85"/></svg>,
+
+  rocket: ({s=ICON_SIZE}) => <svg width={s} height={s} viewBox="0 0 56 56"><path d="M28 8 Q38 14 38 30 L34 34 L22 34 L18 30 Q18 14 28 8Z" fill="#4488FF"/><circle cx="28" cy="22" r="6" fill="#99CCFF"/><circle cx="28" cy="22" r="3.5" fill="#224488"/><polygon points="18,30 12,44 22,36" fill="#FF4422"/><polygon points="38,30 44,44 34,36" fill="#FF4422"/><ellipse cx="28" cy="36" rx="8" ry="4" fill="#FF6622"/></svg>,
+
+  car: ({s=ICON_SIZE}) => <svg width={s} height={s} viewBox="0 0 56 56"><rect x="8" y="30" width="40" height="14" rx="4" fill="#4488FF"/><path d="M16 30 Q18 20 22 18 L34 18 Q38 20 40 30Z" fill="#66AAFF"/><rect x="18" y="20" width="8" height="8" rx="2" fill="#99DDFF"/><rect x="30" y="20" width="8" height="8" rx="2" fill="#99DDFF"/><circle cx="16" cy="44" r="6" fill="#333"/><circle cx="40" cy="44" r="6" fill="#333"/><circle cx="16" cy="44" r="3" fill="#999"/><circle cx="40" cy="44" r="3" fill="#999"/></svg>,
+
+  balloon: ({s=ICON_SIZE}) => <svg width={s} height={s} viewBox="0 0 56 56"><ellipse cx="28" cy="24" rx="16" ry="18" fill="#FF6B6B"/><path d="M24 42 Q28 46 32 42" stroke="#FF6B6B" strokeWidth="2.5" fill="none" strokeLinecap="round"/><line x1="28" y1="46" x2="28" y2="52" stroke="#888" strokeWidth="1.5"/><path d="M18 18 Q20 14 26 16" stroke="#FF9999" strokeWidth="2.5" fill="none" strokeLinecap="round" opacity="0.7"/></svg>,
+
+  sun: ({s=ICON_SIZE}) => <svg width={s} height={s} viewBox="0 0 56 56"><circle cx="28" cy="28" r="12" fill="#FFD700"/>{[0,45,90,135,180,225,270,315].map((a,i)=><line key={i} x1={28+16*Math.cos(a*Math.PI/180)} y1={28+16*Math.sin(a*Math.PI/180)} x2={28+22*Math.cos(a*Math.PI/180)} y2={28+22*Math.sin(a*Math.PI/180)} stroke="#FFD700" strokeWidth="3" strokeLinecap="round"/>)}<circle cx="28" cy="28" r="10" fill="#FFEE40"/></svg>,
+
+  diamond: ({s=ICON_SIZE}) => <svg width={s} height={s} viewBox="0 0 56 56"><polygon points="28,8 48,24 28,50 8,24" fill="#66DDFF"/><polygon points="28,8 48,24 38,24 22,24 8,24" fill="#33BBEE"/><polygon points="28,8 38,24 28,16 18,24 28,8" fill="#99EEFF"/><polygon points="28,50 48,24 38,24" fill="#2299CC"/><polygon points="28,50 8,24 18,24" fill="#44AADD"/></svg>,
+
+  snowflake: ({s=ICON_SIZE}) => <svg width={s} height={s} viewBox="0 0 56 56">{[0,60,120].map((a,i)=><line key={i} x1={28+22*Math.cos(a*Math.PI/180)} y1={28+22*Math.sin(a*Math.PI/180)} x2={28-22*Math.cos(a*Math.PI/180)} y2={28-22*Math.sin(a*Math.PI/180)} stroke="#66AAFF" strokeWidth="3.5" strokeLinecap="round"/>)}{[30,90,150].map((a,i)=><>{[1,-1].map((d,j)=><><line key={`${i}-${j}-1`} x1={28+10*Math.cos(a*Math.PI/180)} y1={28+10*Math.sin(a*Math.PI/180)} x2={28+14*Math.cos((a+d*50)*Math.PI/180)} y2={28+14*Math.sin((a+d*50)*Math.PI/180)} stroke="#66AAFF" strokeWidth="2.5" strokeLinecap="round"/><line key={`${i}-${j}-2`} x1={28-10*Math.cos(a*Math.PI/180)} y1={28-10*Math.sin(a*Math.PI/180)} x2={28-14*Math.cos((a+d*50)*Math.PI/180)} y2={28-14*Math.sin((a+d*50)*Math.PI/180)} stroke="#66AAFF" strokeWidth="2.5" strokeLinecap="round"/></>)}</>)}<circle cx="28" cy="28" r="4" fill="#4488FF"/></svg>,
+
+  flower: ({s=ICON_SIZE}) => <svg width={s} height={s} viewBox="0 0 56 56">{[0,60,120,180,240,300].map((a,i)=><ellipse key={i} cx={28+13*Math.cos(a*Math.PI/180)} cy={28+13*Math.sin(a*Math.PI/180)} rx="7" ry="10" fill="#FF88CC" transform={`rotate(${a},${28+13*Math.cos(a*Math.PI/180)},${28+13*Math.sin(a*Math.PI/180)})`}/>)}<circle cx="28" cy="28" r="9" fill="#FFD700"/><circle cx="28" cy="28" r="5" fill="#FF9900"/></svg>,
+
+  moon: ({s=ICON_SIZE}) => <svg width={s} height={s} viewBox="0 0 56 56"><path d="M32 10 Q44 18 44 30 Q44 44 30 48 Q18 48 12 38 Q22 40 28 32 Q36 22 32 10Z" fill="#FFD700"/><circle cx="36" cy="18" r="2.5" fill="#FFE888"/><circle cx="34" cy="36" r="2" fill="#FFE888"/><circle cx="24" cy="22" r="1.5" fill="#FFE888"/></svg>,
+
+  crown: ({s=ICON_SIZE}) => <svg width={s} height={s} viewBox="0 0 56 56"><path d="M8 38 L8 22 L18 32 L28 10 L38 32 L48 22 L48 38 Z" fill="#FFD700"/><rect x="8" y="38" width="40" height="8" rx="3" fill="#E8A000"/><circle cx="28" cy="16" r="4" fill="#FF3355"/><circle cx="10" cy="26" r="3" fill="#66AAFF"/><circle cx="46" cy="26" r="3" fill="#66AAFF"/></svg>,
+
+  lightning: ({s=ICON_SIZE}) => <svg width={s} height={s} viewBox="0 0 56 56"><path d="M32 8 L18 30 L28 30 L22 50 L40 24 L30 24 Z" fill="#FFD700" stroke="#E8A000" strokeWidth="1.5" strokeLinejoin="round"/></svg>,
+
+  cloud: ({s=ICON_SIZE}) => <svg width={s} height={s} viewBox="0 0 56 56"><circle cx="20" cy="30" r="10" fill="#DDEEFF"/><circle cx="30" cy="26" r="13" fill="#DDEEFF"/><circle cx="40" cy="30" r="9" fill="#DDEEFF"/><rect x="11" y="30" width="36" height="12" rx="4" fill="#DDEEFF"/><circle cx="20" cy="30" r="9" fill="#EEF5FF"/><circle cx="30" cy="26" r="12" fill="#EEF5FF"/></svg>,
+
+  music: ({s=ICON_SIZE}) => <svg width={s} height={s} viewBox="0 0 56 56"><path d="M22 38 L22 18 L42 14 L42 34" stroke="#9966FF" strokeWidth="3" fill="none" strokeLinecap="round" strokeLinejoin="round"/><circle cx="18" cy="40" r="6" fill="#9966FF"/><circle cx="38" cy="36" r="6" fill="#9966FF"/><path d="M22 24 L42 20" stroke="#9966FF" strokeWidth="2.5" fill="none"/></svg>,
+};
+
+// Pool groupings
+const POOLS = {
+  // Each theme uses exactly 21 unique icons from its own category
+  animals: ['cat','dog','bunny','bear','fox','pig','chick','frog','panda','penguin','lion',
+            'flower','star','heart','rainbow','balloon','sun','moon','crown','snowflake','diamond'],
+  foods:   ['apple','banana','strawberry','watermelon','cake','icecream','pizza','donut','carrot','grape','corn',
+            'heart','star','rainbow','balloon','sun','moon','crown','snowflake','diamond','flower'],
+  objects: ['star','heart','rainbow','rocket','car','balloon','sun','diamond','snowflake','flower','moon',
+            'crown','lightning','cloud','music','cat','dog','bunny','bear','chick','frog'],
+};
+
+const THEMES = {
+  animals:{id:'animals',name:'可愛動物',icon:<icons.cat s={32}/>,color:'#FF8FAB'},
+  foods:  {id:'foods',  name:'美味食物',icon:<icons.apple s={32}/>,color:'#FF9B20'},
+  objects:{id:'objects',name:'酷炫圖案',icon:<icons.star s={32}/>,color:'#9966FF'},
+};
+
+const GAME_MODES = {
+  3:{name:'簡單',icon:'🐣',iconSize:70,
+    data:[[0,1,2],[0,3,4],[0,5,6],[1,3,5],[1,4,6],[2,3,6],[2,4,5]]},
+  4:{name:'中等',icon:'🐰',iconSize:58,
+    data:[[0,1,2,3],[0,4,5,6],[0,7,8,9],[0,10,11,12],[1,4,7,10],[1,5,8,11],[1,6,9,12],[2,4,8,12],[2,5,9,10],[2,6,7,11],[3,4,9,11],[3,5,7,12],[3,6,8,10]]},
+  5:{name:'挑戰',icon:'🦁',iconSize:50,
+    data:[[0,1,2,3,4],[0,5,6,7,8],[0,9,10,11,12],[0,13,14,15,16],[0,17,18,19,20],[1,5,9,13,17],[1,6,10,14,18],[1,7,11,15,19],[1,8,12,16,20],[2,5,10,15,20],[2,6,9,16,19],[2,7,12,13,18],[2,8,11,14,17],[3,5,11,16,18],[3,6,12,15,17],[3,7,9,14,20],[3,8,10,13,19],[4,5,12,14,19],[4,6,11,13,20],[4,7,10,16,17],[4,8,9,15,18]]},
+};
+
+const shuffle = arr => { const a=[...arr]; for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]} return a; };
+
+// Layout: first symbol centered, rest in circle
+function getLayout(n, cardSize) {
+  const cx = cardSize/2, cy = cardSize/2;
+  const radius = cardSize * (n===3 ? 0.26 : n===4 ? 0.28 : 0.29);
+  const jitter = cardSize * 0.03;
+  return Array.from({length:n}, (_,i) => {
+    let x = cx, y = cy;
+    if (i > 0) {
+      const angle = ((i-1) / (n-1)) * 2 * Math.PI - Math.PI/2;
+      x = cx + radius * Math.cos(angle);
+      y = cy + radius * Math.sin(angle);
+    }
+    x += (Math.random()-0.5)*2*jitter;
+    y += (Math.random()-0.5)*2*jitter;
+    const rot = Math.floor(Math.random()*360);
+    const scale = 0.88 + Math.random()*0.26;
+    return {x, y, rot, scale};
+  });
+}
+
+// ─── Card Component ────────────────────────
+const Card = React.memo(({symbolNames, iconSize, onSymbolClick, highlight}) => {
+  const n = symbolNames.length;
+  const cardSize = Math.min(window.innerWidth * 0.42, window.innerHeight * 0.36, 210);
+  const layout = React.useMemo(() => getLayout(n, cardSize), [n, cardSize]);
+  
+  return (
+    <div className="card-circle card-enter" style={{
+      width:cardSize, height:cardSize,
+      background:'#FFFFFF',
+      border:'4px solid #E0D0FF',
+      flexShrink:0
+    }}>
+      {symbolNames.map((name, i) => {
+        const {x,y,rot,scale} = layout[i];
+        const Icon = icons[name];
+        const isMatch = highlight === name;
+        return (
+          <div key={name+i} className={`icon-btn ${isMatch ? 'correct-glow' : ''}`}
+            onClick={() => onSymbolClick(name)}
+            style={{
+              position:'absolute',
+              left: x, top: y,
+              transform:`translate(-50%,-50%) rotate(${rot}deg) scale(${scale})`,
+              transition:'transform 0.15s',
+            }}>
+            <Icon s={iconSize}/>
+          </div>
         );
+      })}
+    </div>
+  );
+});
 
-        const DifficultyButton = ({ mode, count, onClick }) => (
-            <button 
-                onClick={onClick}
-                className="group relative flex flex-col items-center justify-center bg-white border-4 border-yellow-300 rounded-3xl p-3 md:p-4 w-full md:w-48 shadow-lg hover:shadow-xl hover:border-yellow-400 hover:scale-105 transition-all active:scale-95"
-            >
-                <div className="text-4xl md:text-5xl mb-1 md:mb-2 group-hover:scale-110 transition-transform">{mode.icon}</div>
-                <div className="text-lg md:text-xl font-bold text-gray-700">{mode.name}</div>
-                <div className="text-xs md:text-sm text-gray-400 font-bold">{count} 個圖案</div>
-            </button>
-        );
+// ─── App ──────────────────────────────────
+const App = () => {
+  const [state, setState] = React.useState('menu');
+  const [themeId, setThemeId] = React.useState('animals');
+  const [diff, setDiff] = React.useState(3);
+  const [score, setScore] = React.useState(0);
+  const [deck, setDeck] = React.useState([]);
+  const [idx, setIdx] = React.useState(0);
+  const [symbolPool, setSymbolPool] = React.useState([]);
+  const [highlight, setHighlight] = React.useState(null);
+  const [shakeSig, setShakeSig] = React.useState(0);
+  const [errorMsg, setErrorMsg] = React.useState('');
 
-        const App = () => {
-            const [gameState, setGameState] = React.useState('menu'); // menu, playing, end
-            const [currentThemeId, setCurrentThemeId] = React.useState('animals'); // animals, foods, objects
-            const [difficulty, setDifficulty] = React.useState(3); // 3, 4, 5
+  const startGame = (d) => {
+    setDiff(d);
+    // IMPORTANT: Do NOT shuffle the pool — pool indices must stay fixed to match deck data
+    const pool = [...POOLS[themeId]];
+    setSymbolPool(pool);
+    // Only shuffle the deck ORDER (which pair to show first/second/etc)
+    const rawDeck = shuffle([...GAME_MODES[d].data]);
+    setDeck(rawDeck);
+    setIdx(0); setScore(0); setHighlight(null); setErrorMsg('');
+    setState('playing');
+  };
+
+  const handleClick = (name) => {
+    if (state !== 'playing' || highlight) return;
+    const cardA = deck[idx], cardB = deck[idx+1];
+    const si = symbolPool.indexOf(name);
+    if (cardA.includes(si) && cardB.includes(si)) {
+      setHighlight(name);
+      confetti({particleCount:60,spread:70,origin:{y:0.6},colors:['#FFD93D','#FF6B6B','#4488FF','#5DBB63']});
+      setTimeout(()=>{
+        setHighlight(null);
+        const ns = score + 1;
+        setScore(ns);
+        if (idx+2 >= deck.length) {
+          setState('end');
+          confetti({particleCount:180,spread:110,origin:{y:0.5}});
+        } else {
+          setIdx(i=>i+1);
+        }
+      }, 750);
+    } else {
+      setShakeSig(s=>s+1);
+      setErrorMsg('再找找看！🔍');
+      setTimeout(()=>setErrorMsg(''), 1200);
+    }
+  };
+
+  let cardASymbols=[], cardBSymbols=[];
+  if (state==='playing' && deck.length>0) {
+    cardASymbols = deck[idx].map(i=>symbolPool[i]);
+    cardBSymbols = deck[idx+1].map(i=>symbolPool[i]);
+  }
+
+  const iconSize = GAME_MODES[diff]?.iconSize || 58;
+
+  return (
+    <div style={{display:'flex',flexDirection:'column',height:'100%',maxWidth:700,margin:'0 auto',position:'relative'}}>
+      
+      {/* Error toast */}
+      {errorMsg && (
+        <div style={{position:'fixed',top:'50%',left:'50%',transform:'translate(-50%,-50%)',
+          background:'#FF6B6B',color:'#fff',padding:'12px 28px',borderRadius:50,
+          fontSize:20,fontWeight:800,boxShadow:'0 6px 24px rgba(255,107,107,0.5)',
+          zIndex:100,pointerEvents:'none',whiteSpace:'nowrap'}}>
+          {errorMsg}
+        </div>
+      )}
+
+      {/* Header */}
+      <header style={{display:'flex',justifyContent:'space-between',alignItems:'center',padding:'12px 16px 4px',flexShrink:0}}>
+        <div onClick={()=>setState('menu')} style={{cursor:'pointer',display:'flex',alignItems:'center',gap:6}}>
+          <span style={{fontSize:22,fontWeight:900,color:'#FF6B6B'}}>幼兒版 Spot It!</span>
+        </div>
+        {state!=='menu' && (
+          <div className="score-pill" style={{fontSize:18}}>
+            ⭐ {score}
+          </div>
+        )}
+      </header>
+
+      {/* Main */}
+      <main style={{flex:1,display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',padding:'8px 16px',overflow:'hidden'}}>
+
+        {/* MENU */}
+        {state==='menu' && (
+          <div className="fade-in" style={{width:'100%',maxWidth:500,display:'flex',flexDirection:'column',gap:20,alignItems:'center'}}>
+            <div style={{textAlign:'center',marginBottom:4}}>
+              <div style={{fontSize:38,fontWeight:900,color:'#FF6B6B',lineHeight:1.2}}>找找看！🔍</div>
+              <div style={{fontSize:14,color:'#aaa',marginTop:4}}>找出兩張牌上相同的圖案</div>
+            </div>
             
-            const [score, setScore] = React.useState(0);
-            const [deck, setDeck] = React.useState([]);
-            const [currentCardIdx, setCurrentCardIdx] = React.useState(0);
-            const [shake, setShake] = React.useState(false);
-            const [highlight, setHighlight] = React.useState(null);
-            const [showError, setShowError] = React.useState(false);
-            const [emojiMap, setEmojiMap] = React.useState([]);
+            {/* Theme */}
+            <div style={{width:'100%'}}>
+              <div style={{fontSize:13,fontWeight:800,color:'#bbb',textAlign:'center',marginBottom:10}}>選擇主題</div>
+              <div style={{display:'flex',gap:10,justifyContent:'center'}}>
+                {Object.values(THEMES).map(t=>(
+                  <button key={t.id} className={`theme-btn ${themeId===t.id?'active':''}`}
+                    onClick={()=>setThemeId(t.id)}
+                    style={{padding:'10px 14px',display:'flex',flexDirection:'column',alignItems:'center',gap:4,minWidth:80}}>
+                    {t.icon}
+                    <span style={{fontSize:12,fontWeight:800,color:themeId===t.id?'#996600':'#888'}}>{t.name}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
 
-            const startGame = (selectedDifficulty) => {
-                setDifficulty(selectedDifficulty);
-                
-                // 1. 根據選擇的主題獲取 Emoji 池
-                const currentPool = THEMES[currentThemeId].pool;
-                
-                // 2. 隨機打亂 Emoji
-                const shuffledEmojis = shuffle([...currentPool]);
-                setEmojiMap(shuffledEmojis);
+            <div style={{width:200,height:2,background:'#f0e8d0',borderRadius:2}}/>
 
-                // 3. 根據難度獲取並打亂牌庫
-                const gameData = GAME_MODES[selectedDifficulty].data;
-                const shuffledDeck = shuffle([...gameData]); 
-                
-                setDeck(shuffledDeck);
-                setCurrentCardIdx(0);
-                setScore(0);
-                setGameState('playing');
-                setHighlight(null);
-                setShowError(false);
-            };
+            {/* Difficulty */}
+            <div style={{width:'100%'}}>
+              <div style={{fontSize:13,fontWeight:800,color:'#bbb',textAlign:'center',marginBottom:10}}>選難度開始</div>
+              <div style={{display:'flex',gap:10,justifyContent:'center'}}>
+                {Object.entries(GAME_MODES).map(([k,m])=>(
+                  <button key={k} className="diff-btn" onClick={()=>startGame(Number(k))}
+                    style={{padding:'14px 12px',display:'flex',flexDirection:'column',alignItems:'center',gap:4,width:88}}>
+                    <span style={{fontSize:32}}>{m.icon}</span>
+                    <span style={{fontSize:15,fontWeight:800,color:'#555'}}>{m.name}</span>
+                    <span style={{fontSize:11,color:'#aaa',fontWeight:700}}>{k} 個圖案</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
 
-            const handleMatch = (symbol) => {
-                if (gameState !== 'playing') return;
-                
-                const cardA = deck[currentCardIdx];
-                const cardB = deck[currentCardIdx + 1];
+        {/* PLAYING */}
+        {state==='playing' && (
+          <div key={shakeSig} className={shakeSig>0?'shake-anim':''} style={{
+            display:'flex',flexDirection:'column',alignItems:'center',
+            gap:16,width:'100%'
+          }}>
+            <div style={{fontSize:12,fontWeight:700,color:'#ccc'}}>
+              {idx+1} / {deck.length-1} 組
+            </div>
+            <div style={{display:'flex',flexDirection:'row',gap:16,alignItems:'center',justifyContent:'center',flexWrap:'wrap'}}>
+              <Card symbolNames={cardASymbols} iconSize={iconSize} onSymbolClick={handleClick} highlight={highlight}/>
+              <div style={{fontSize:28,fontWeight:900,color:'#FFD93D',flexShrink:0,textShadow:'0 2px 8px rgba(0,0,0,0.15)'}}>vs</div>
+              <Card symbolNames={cardBSymbols} iconSize={iconSize} onSymbolClick={handleClick} highlight={highlight}/>
+            </div>
+            <div style={{fontSize:13,color:'#ccc',fontWeight:700}}>點擊兩張牌上相同的圖案！</div>
+          </div>
+        )}
 
-                const symbolIndex = emojiMap.indexOf(symbol);
-                
-                if (cardA.includes(symbolIndex) && cardB.includes(symbolIndex)) {
-                    setHighlight(symbol);
-                    setShowError(false);
-                    
-                    confetti({
-                        particleCount: 50,
-                        spread: 60,
-                        origin: { y: 0.6 },
-                        colors: ['#FCD34D', '#F87171', '#60A5FA', '#34D399']
-                    });
+        {/* END */}
+        {state==='end' && (
+          <div className="fade-in" style={{
+            background:'#fff',borderRadius:28,padding:'32px 28px',
+            textAlign:'center',maxWidth:320,width:'100%',
+            boxShadow:'0 8px 40px rgba(0,0,0,0.1)',display:'flex',flexDirection:'column',gap:16
+          }}>
+            <div style={{fontSize:56}}>🎉</div>
+            <div style={{fontSize:28,fontWeight:900,color:'#FF6B6B'}}>太棒了！</div>
+            <div style={{fontSize:15,color:'#aaa'}}>完成了{GAME_MODES[diff].name}挑戰！</div>
+            <div style={{background:'#FFF8E7',borderRadius:12,padding:'10px 16px',
+              fontSize:18,fontWeight:800,color:'#FF8C42'}}>
+              配對成功 {score} 組 ⭐
+            </div>
+            <button className="btn-main" onClick={()=>startGame(diff)}
+              style={{padding:'12px 24px',fontSize:17,marginTop:4}}>
+              再玩一次 🔄
+            </button>
+            <button className="btn-secondary" onClick={()=>setState('menu')}
+              style={{padding:'10px 24px',fontSize:15}}>
+              回主選單 🏠
+            </button>
+          </div>
+        )}
+      </main>
 
-                    setTimeout(() => {
-                        setScore(s => s + 1);
-                        setHighlight(null);
-                        
-                        if (currentCardIdx + 2 >= deck.length) {
-                            endGame();
-                        } else {
-                            setCurrentCardIdx(c => c + 1);
-                        }
-                    }, 800);
+      <footer style={{textAlign:'center',padding:'6px',color:'#ddd',fontSize:11,flexShrink:0}}>
+        專為幼兒設計 • 訓練觀察力
+      </footer>
+    </div>
+  );
+};
 
-                } else {
-                    setShake(true);
-                    setShowError(true);
-                    setTimeout(() => setShake(false), 500);
-                    setTimeout(() => setShowError(false), 1500);
-                }
-            };
-
-            const endGame = () => {
-                setGameState('end');
-                setShowError(false);
-                confetti({
-                    particleCount: 150,
-                    spread: 100,
-                    origin: { y: 0.6 }
-                });
-            };
-
-            const goToMenu = () => {
-                setGameState('menu');
-                setScore(0);
-            };
-
-            // 準備當前卡片數據
-            let cardASymbols = [], cardBSymbols = [];
-            if (gameState === 'playing' && deck.length > 0) {
-                const cardAData = deck[currentCardIdx] || [];
-                const cardBData = deck[currentCardIdx + 1] || [];
-                cardASymbols = cardAData.map(i => emojiMap[i]);
-                cardBSymbols = cardBData.map(i => emojiMap[i]);
-            }
-
-            return (
-                // 修正：減少 pt-12 為 pt-2，讓標題往上移
-                <div className="flex flex-col h-full w-full max-w-4xl mx-auto relative pt-2">
-                    
-                    {/* Error Overlay */}
-                    {showError && (
-                        <div className="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-50 pointer-events-none">
-                            <div className="bg-red-400 text-white px-8 py-4 rounded-3xl text-2xl md:text-3xl font-bold shadow-2xl border-4 border-white animate-bounce whitespace-nowrap">
-                                ❌ 答錯了！再試試看
-                            </div>
-                        </div>
-                    )}
-
-                    {/* Header */}
-                    <header className="flex justify-between items-center px-4 pb-2 flex-none z-10">
-                        <div className="flex items-center gap-2 cursor-pointer" onClick={goToMenu}>
-                            <h1 className="text-2xl md:text-3xl text-yellow-600 game-title">
-                                幼兒版 Spot It
-                            </h1>
-                            <span className="text-2xl">{THEMES[currentThemeId].icon}</span>
-                        </div>
-                        
-                        {gameState !== 'menu' && (
-                            <div className="bg-white px-4 py-2 rounded-full shadow-md text-yellow-600 font-bold text-xl">
-                                得分: {score}
-                            </div>
-                        )}
-                    </header>
-
-                    {/* Main Game Area */}
-                    <main className="flex-grow flex flex-col items-center relative w-full overflow-y-auto overflow-x-hidden custom-scroll p-4 pb-32">
-                        
-                        {/* 1. 選單畫面 */}
-                        {gameState === 'menu' && (
-                            <div className="text-center space-y-4 md:space-y-8 animate-fade-in w-full max-w-3xl my-auto pb-8">
-                                
-                                {/* 主題選擇區 */}
-                                <div className="space-y-2 md:space-y-4">
-                                    <h2 className="text-lg md:text-xl font-bold text-gray-500">第一步：選擇圖案</h2>
-                                    <div className="flex flex-wrap gap-3 md:gap-4 justify-center">
-                                        {Object.values(THEMES).map(theme => (
-                                            <ThemeButton 
-                                                key={theme.id}
-                                                theme={theme}
-                                                isSelected={currentThemeId === theme.id}
-                                                onClick={() => setCurrentThemeId(theme.id)}
-                                            />
-                                        ))}
-                                    </div>
-                                </div>
-
-                                <div className="w-full h-1 bg-yellow-100 rounded-full mx-auto max-w-xs"></div>
-
-                                {/* 難度選擇區 */}
-                                <div className="space-y-2 md:space-y-4">
-                                    <h2 className="text-lg md:text-xl font-bold text-gray-500">第二步：選擇難度開始</h2>
-                                    <div className="flex flex-col md:flex-row gap-3 md:gap-4 justify-center items-center px-4">
-                                        <DifficultyButton mode={GAME_MODES[3]} count={3} onClick={() => startGame(3)} />
-                                        <DifficultyButton mode={GAME_MODES[4]} count={4} onClick={() => startGame(4)} />
-                                        <DifficultyButton mode={GAME_MODES[5]} count={5} onClick={() => startGame(5)} />
-                                    </div>
-                                </div>
-                            </div>
-                        )}
-
-                        {/* 2. 遊戲畫面 - 修正：增加 pt-8 讓卡片往下移，增加 gap-8 拉開距離 */}
-                        {gameState === 'playing' && (
-                            <div className={`flex flex-col md:flex-row gap-8 md:gap-16 w-full h-full items-center justify-start pt-8 md:pt-0 md:justify-center ${shake ? 'shake' : ''}`}>
-                                <div className="relative group">
-                                    <Card 
-                                        symbols={cardASymbols} 
-                                        onSymbolClick={handleMatch}
-                                        isTarget={true}
-                                        highlight={highlight}
-                                        fontSize={GAME_MODES[difficulty].fontSize}
-                                    />
-                                </div>
-
-                                <div className="relative">
-                                    <Card 
-                                        symbols={cardBSymbols} 
-                                        onSymbolClick={handleMatch}
-                                        isTarget={false}
-                                        highlight={highlight}
-                                        fontSize={GAME_MODES[difficulty].fontSize}
-                                    />
-                                </div>
-                            </div>
-                        )}
-
-                        {/* 3. 結束畫面 */}
-                        {gameState === 'end' && (
-                            <div className="text-center bg-white p-8 rounded-3xl shadow-xl space-y-6 fade-in max-w-sm w-full mx-4 my-auto">
-                                <div className="text-6xl">🎉</div>
-                                <h2 className="text-3xl font-bold text-yellow-600">太棒了！</h2>
-                                <p className="text-xl text-gray-500">你完成了 {GAME_MODES[difficulty].name} 挑戰！</p>
-                                <div className="text-lg text-yellow-600 font-bold bg-yellow-50 py-2 rounded-lg">
-                                    總共 {score} 組配對
-                                </div>
-                                
-                                <div className="flex flex-col gap-3 pt-4">
-                                    <button 
-                                        onClick={() => startGame(difficulty)}
-                                        className="bg-green-400 hover:bg-green-500 text-white text-xl font-bold py-3 px-8 rounded-full shadow-lg transform transition hover:scale-105 active:scale-95 w-full"
-                                    >
-                                        再玩一次 🔄
-                                    </button>
-                                    <button 
-                                        onClick={goToMenu}
-                                        className="bg-white border-2 border-gray-200 text-gray-400 font-bold py-2 px-8 rounded-full hover:bg-gray-50 hover:text-gray-600 transition w-full"
-                                    >
-                                        回主選單 🏠
-                                    </button>
-                                </div>
-                            </div>
-                        )}
-
-                    </main>
-
-                    {/* Footer Instructions */}
-                    <footer className="p-2 text-center text-gray-400 text-xs md:text-sm flex-none">
-                        <p>專為幼兒設計 • 訓練觀察力</p>
-                    </footer>
-                </div>
-            );
-        };
-
-        const root = ReactDOM.createRoot(document.getElementById('root'));
-        root.render(<App />);
+ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
     </script>
 </body>
 </html>
