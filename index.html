@@ -181,7 +181,8 @@ function getLayout(n, cardSize) {
 const Card = React.memo(({symbolNames, iconSize, onSymbolClick, highlight}) => {
   const n = symbolNames.length;
   const cardSize = Math.min(window.innerWidth * 0.42, window.innerHeight * 0.36, 210);
-  const layout = React.useMemo(() => getLayout(n, cardSize), [n, cardSize]);
+  const layoutKey = symbolNames.join(',');
+  const layout = React.useMemo(() => getLayout(n, cardSize), [n, cardSize, layoutKey]);
   
   return (
     <div className="card-circle card-enter" style={{
@@ -245,8 +246,7 @@ const App = () => {
       confetti({particleCount:60,spread:70,origin:{y:0.6},colors:['#FFD93D','#FF6B6B','#4488FF','#5DBB63']});
       setTimeout(()=>{
         setHighlight(null);
-        const ns = score + 1;
-        setScore(ns);
+        setScore(s => s + 1);
         if (idx+2 >= deck.length) {
           setState('end');
           confetti({particleCount:180,spread:110,origin:{y:0.5}});
@@ -349,9 +349,9 @@ const App = () => {
               {idx+1} / {deck.length-1} 組
             </div>
             <div style={{display:'flex',flexDirection:'row',gap:16,alignItems:'center',justifyContent:'center',flexWrap:'wrap'}}>
-              <Card symbolNames={cardASymbols} iconSize={iconSize} onSymbolClick={handleClick} highlight={highlight}/>
+              <Card key={'A-'+idx} symbolNames={cardASymbols} iconSize={iconSize} onSymbolClick={handleClick} highlight={highlight}/>
               <div style={{fontSize:28,fontWeight:900,color:'#FFD93D',flexShrink:0,textShadow:'0 2px 8px rgba(0,0,0,0.15)'}}>vs</div>
-              <Card symbolNames={cardBSymbols} iconSize={iconSize} onSymbolClick={handleClick} highlight={highlight}/>
+              <Card key={'B-'+idx} symbolNames={cardBSymbols} iconSize={iconSize} onSymbolClick={handleClick} highlight={highlight}/>
             </div>
             <div style={{fontSize:13,color:'#ccc',fontWeight:700}}>點擊兩張牌上相同的圖案！</div>
           </div>
