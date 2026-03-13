@@ -157,22 +157,24 @@ const GAME_MODES = {
 
 const shuffle = arr => { const a=[...arr]; for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]} return a; };
 
-// Layout: first symbol centered, rest in circle
+// Layout: all icons on a ring, evenly spaced — no overlaps possible
 function getLayout(n, cardSize) {
   const cx = cardSize/2, cy = cardSize/2;
-  const radius = cardSize * (n===3 ? 0.26 : n===4 ? 0.28 : 0.29);
-  const jitter = cardSize * 0.03;
+  // Radius chosen so icons fit inside the circle without overlap
+  // Each icon is iconSize px; min arc distance must be > iconSize
+  // circumference = 2*PI*r, n gaps, so r > n*iconSize/(2*PI)
+  // Use a fixed safe radius based on card size
+  const radius = cardSize * (n===3 ? 0.30 : n===4 ? 0.32 : 0.33);
+  // Rotate the whole ring by a random offset each time
+  const startAngle = Math.random() * 2 * Math.PI;
   return Array.from({length:n}, (_,i) => {
-    let x = cx, y = cy;
-    if (i > 0) {
-      const angle = ((i-1) / (n-1)) * 2 * Math.PI - Math.PI/2;
-      x = cx + radius * Math.cos(angle);
-      y = cy + radius * Math.sin(angle);
-    }
-    x += (Math.random()-0.5)*2*jitter;
-    y += (Math.random()-0.5)*2*jitter;
+    const angle = startAngle + (i / n) * 2 * Math.PI;
+    // Small jitter along radial direction only (won't cause overlap)
+    const r = radius + (Math.random()-0.5) * cardSize * 0.04;
+    const x = cx + r * Math.cos(angle);
+    const y = cy + r * Math.sin(angle);
     const rot = Math.floor(Math.random()*360);
-    const scale = 0.88 + Math.random()*0.26;
+    const scale = 0.85 + Math.random()*0.20;
     return {x, y, rot, scale};
   });
 }
