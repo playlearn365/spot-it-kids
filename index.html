@@ -8,6 +8,7 @@
     <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@700;800;900&display=swap" rel="stylesheet">
     <style>
         *{box-sizing:border-box;margin:0;padding:0}
@@ -44,100 +45,122 @@
 <script type="text/babel">
 
 // ─────────────────────────────────────────────
-// SVG ICON DEFINITIONS  (21 icons × 3 themes)
-// Each icon is a React component returning an <svg>
+// 🔊 SOUND ENGINE — Tone.js（木琴音色，電腦＋手機都能用）
 // ─────────────────────────────────────────────
 
-const ICON_SIZE = 56; // base render size (will be scaled via transform)
+// 木琴合成器：用 FMSynth 模擬木琴的清脆敲擊感
+let xylophone = null;
+let wrongSynth = null;
 
+function getSynths() {
+  if (!xylophone) {
+    xylophone = new Tone.FMSynth({
+      oscillator: { type: 'triangle' },
+      envelope: { attack: 0.001, decay: 0.3, sustain: 0.0, release: 0.3 },
+      modulation: { type: 'square' },
+      modulationEnvelope: { attack: 0.001, decay: 0.15, sustain: 0.0, release: 0.1 },
+      modulationIndex: 8,
+      harmonicity: 3,
+      volume: -6,
+    }).toDestination();
+  }
+  if (!wrongSynth) {
+    wrongSynth = new Tone.Synth({
+      oscillator: { type: 'sawtooth' },
+      envelope: { attack: 0.01, decay: 0.2, sustain: 0.0, release: 0.2 },
+      volume: -10,
+    }).toDestination();
+  }
+}
+
+async function startAudio() {
+  // 手機需要在使用者觸碰後啟動 Tone.js
+  await Tone.start();
+  getSynths();
+}
+
+// ✅ 答對：木琴上升音階 C5→E5→G5→C6
+function playCorrect() {
+  try {
+    const now = Tone.now();
+    const notes = ['C5','E5','G5','C6'];
+    notes.forEach((note, i) => {
+      xylophone.triggerAttackRelease(note, '16n', now + i * 0.12);
+    });
+  } catch(e) {}
+}
+
+// ❌ 答錯：低沉下降提示音
+function playWrong() {
+  try {
+    const now = Tone.now();
+    wrongSynth.triggerAttackRelease('A2', '16n', now);
+    wrongSynth.triggerAttackRelease('E2', '16n', now + 0.15);
+  } catch(e) {}
+}
+
+// 🎉 破關：木琴勝利旋律
+function playWin() {
+  try {
+    const now = Tone.now();
+    const melody = [
+      ['C5', 0],['E5', 0.13],['G5', 0.26],['E5', 0.39],
+      ['G5', 0.52],['C6', 0.65],['C6', 0.85],['E6', 1.05],
+    ];
+    melody.forEach(([note, delay]) => {
+      xylophone.triggerAttackRelease(note, '8n', now + delay);
+    });
+  } catch(e) {}
+}
+
+// ─────────────────────────────────────────────
+// SVG ICONS
+// ─────────────────────────────────────────────
+const ICON_SIZE = 56;
 const icons = {
-  // ── ANIMALS ──────────────────────────────
   cat: ({s=ICON_SIZE}) => <svg width={s} height={s} viewBox="0 0 56 56"><circle cx="28" cy="32" r="18" fill="#FFB347"/><polygon points="10,18 18,30 6,30" fill="#FFB347"/><polygon points="46,18 38,30 50,30" fill="#FFB347"/><circle cx="22" cy="30" r="3.5" fill="#fff"/><circle cx="34" cy="30" r="3.5" fill="#fff"/><circle cx="22" cy="30" r="2" fill="#333"/><circle cx="34" cy="30" r="2" fill="#333"/><path d="M24 37 Q28 41 32 37" stroke="#cc6633" strokeWidth="1.8" fill="none" strokeLinecap="round"/><ellipse cx="28" cy="36" rx="3" ry="2" fill="#FFD0A0"/></svg>,
-
   dog: ({s=ICON_SIZE}) => <svg width={s} height={s} viewBox="0 0 56 56"><ellipse cx="28" cy="34" rx="17" ry="14" fill="#C8864A"/><ellipse cx="16" cy="25" rx="7" ry="10" fill="#C8864A"/><ellipse cx="40" cy="25" rx="7" ry="10" fill="#C8864A"/><circle cx="22" cy="32" r="3" fill="#fff"/><circle cx="34" cy="32" r="3" fill="#fff"/><circle cx="22" cy="32" r="1.8" fill="#222"/><circle cx="34" cy="32" r="1.8" fill="#222"/><ellipse cx="28" cy="37" rx="5" ry="3.5" fill="#e8a070"/><path d="M25 39 Q28 43 31 39" stroke="#c06030" strokeWidth="1.6" fill="none" strokeLinecap="round"/></svg>,
-
   bunny: ({s=ICON_SIZE}) => <svg width={s} height={s} viewBox="0 0 56 56"><circle cx="28" cy="34" r="16" fill="#F0E0FF"/><ellipse cx="20" cy="13" rx="5" ry="13" fill="#F0E0FF"/><ellipse cx="20" cy="13" rx="3" ry="10" fill="#FFB0C8"/><ellipse cx="36" cy="13" rx="5" ry="13" fill="#F0E0FF"/><ellipse cx="36" cy="13" rx="3" ry="10" fill="#FFB0C8"/><circle cx="22" cy="33" r="3" fill="#fff"/><circle cx="34" cy="33" r="3" fill="#fff"/><circle cx="22" cy="33" r="1.8" fill="#333"/><circle cx="34" cy="33" r="1.8" fill="#333"/><circle cx="28" cy="37" r="3" fill="#FFB0C8"/></svg>,
-
   bear: ({s=ICON_SIZE}) => <svg width={s} height={s} viewBox="0 0 56 56"><circle cx="28" cy="33" r="17" fill="#8B6040"/><circle cx="16" cy="20" r="7" fill="#8B6040"/><circle cx="40" cy="20" r="7" fill="#8B6040"/><circle cx="16" cy="20" r="4" fill="#A07050"/><circle cx="40" cy="20" r="4" fill="#A07050"/><circle cx="22" cy="32" r="3.5" fill="#fff"/><circle cx="34" cy="32" r="3.5" fill="#fff"/><circle cx="22" cy="32" r="2" fill="#333"/><circle cx="34" cy="32" r="2" fill="#333"/><ellipse cx="28" cy="38" rx="6" ry="4" fill="#A07050"/><circle cx="28" cy="36" r="2.5" fill="#6B4030"/></svg>,
-
   fox: ({s=ICON_SIZE}) => <svg width={s} height={s} viewBox="0 0 56 56"><polygon points="28,8 16,26 40,26" fill="#FF6B20"/><circle cx="28" cy="34" r="16" fill="#FF6B20"/><circle cx="28" cy="38" r="7" fill="#FFD0A0"/><circle cx="21" cy="32" r="3" fill="#fff"/><circle cx="35" cy="32" r="3" fill="#fff"/><circle cx="21" cy="32" r="1.8" fill="#333"/><circle cx="35" cy="32" r="1.8" fill="#333"/><circle cx="28" cy="38" r="2" fill="#d04010"/></svg>,
-
   pig: ({s=ICON_SIZE}) => <svg width={s} height={s} viewBox="0 0 56 56"><circle cx="28" cy="32" r="18" fill="#FFB3C1"/><circle cx="17" cy="22" r="6" fill="#FFB3C1"/><circle cx="39" cy="22" r="6" fill="#FFB3C1"/><ellipse cx="28" cy="37" rx="7" ry="5" fill="#FF8FAB"/><circle cx="26" cy="37" r="2" fill="#d06070"/><circle cx="30" cy="37" r="2" fill="#d06070"/><circle cx="21" cy="30" r="3" fill="#fff"/><circle cx="35" cy="30" r="3" fill="#fff"/><circle cx="21" cy="30" r="1.8" fill="#333"/><circle cx="35" cy="30" r="1.8" fill="#333"/></svg>,
-
   chick: ({s=ICON_SIZE}) => <svg width={s} height={s} viewBox="0 0 56 56"><circle cx="28" cy="33" r="16" fill="#FFE04A"/><circle cx="28" cy="18" r="10" fill="#FFE04A"/><polygon points="28,22 23,28 33,28" fill="#FF9500"/><circle cx="22" cy="16" r="3" fill="#333"/><circle cx="34" cy="16" r="3" fill="#333"/><ellipse cx="18" cy="36" rx="5" ry="3" fill="#FFD000" transform="rotate(-20,18,36)"/><ellipse cx="38" cy="36" rx="5" ry="3" fill="#FFD000" transform="rotate(20,38,36)"/></svg>,
-
   frog: ({s=ICON_SIZE}) => <svg width={s} height={s} viewBox="0 0 56 56"><circle cx="28" cy="34" r="16" fill="#5DBB63"/><circle cx="16" cy="21" r="8" fill="#5DBB63"/><circle cx="40" cy="21" r="8" fill="#5DBB63"/><circle cx="16" cy="21" r="4.5" fill="#fff"/><circle cx="40" cy="21" r="4.5" fill="#fff"/><circle cx="16" cy="21" r="3" fill="#1A1A1A"/><circle cx="40" cy="21" r="3" fill="#1A1A1A"/><path d="M20 38 Q28 44 36 38" stroke="#2A8B30" strokeWidth="2" fill="none" strokeLinecap="round"/></svg>,
-
   panda: ({s=ICON_SIZE}) => <svg width={s} height={s} viewBox="0 0 56 56"><circle cx="28" cy="32" r="18" fill="#fff"/><circle cx="17" cy="22" r="7" fill="#333"/><circle cx="39" cy="22" r="7" fill="#333"/><ellipse cx="20" cy="33" rx="5" ry="4" fill="#333"/><ellipse cx="36" cy="33" rx="5" ry="4" fill="#333"/><circle cx="20" cy="33" r="2.5" fill="#fff"/><circle cx="36" cy="33" r="2.5" fill="#fff"/><circle cx="20" cy="33" r="1.5" fill="#111"/><circle cx="36" cy="33" r="1.5" fill="#111"/><circle cx="28" cy="38" r="3" fill="#ddd"/></svg>,
-
   penguin: ({s=ICON_SIZE}) => <svg width={s} height={s} viewBox="0 0 56 56"><ellipse cx="28" cy="33" rx="14" ry="18" fill="#222"/><ellipse cx="28" cy="35" rx="8" ry="12" fill="#fff"/><circle cx="23" cy="25" r="3" fill="#fff"/><circle cx="33" cy="25" r="3" fill="#fff"/><circle cx="23" cy="25" r="1.8" fill="#111"/><circle cx="33" cy="25" r="1.8" fill="#111"/><polygon points="28,31 25,34 31,34" fill="#FF9500"/><ellipse cx="16" cy="33" rx="5" ry="9" fill="#222" transform="rotate(-15,16,33)"/><ellipse cx="40" cy="33" rx="5" ry="9" fill="#222" transform="rotate(15,40,33)"/></svg>,
-
   lion: ({s=ICON_SIZE}) => <svg width={s} height={s} viewBox="0 0 56 56"><circle cx="28" cy="30" r="20" fill="#C8860A" opacity="0.5"/><circle cx="28" cy="30" r="14" fill="#F0A020"/><circle cx="22" cy="29" r="3" fill="#fff"/><circle cx="34" cy="29" r="3" fill="#fff"/><circle cx="22" cy="29" r="1.8" fill="#333"/><circle cx="34" cy="29" r="1.8" fill="#333"/><ellipse cx="28" cy="34" rx="5" ry="3.5" fill="#e88010"/><circle cx="28" cy="32" r="2.5" fill="#A05010"/><path d="M24 37 Q28 41 32 37" stroke="#904010" strokeWidth="1.8" fill="none" strokeLinecap="round"/></svg>,
-
-  // ── FOODS ────────────────────────────────
-  apple: ({s=ICON_SIZE}) => <svg width={s} height={s} viewBox="0 0 56 56"><path d="M28 14 Q34 6 40 10" stroke="#4A9A30" strokeWidth="2.5" fill="none" strokeLinecap="round"/><path d="M14 24 Q10 14 20 13 Q24 12 28 16 Q32 12 36 13 Q46 14 42 24 Q40 36 28 46 Q16 36 14 24Z" fill="#FF4444"/><path d="M20 16 Q18 24 22 32" stroke="#FF7777" strokeWidth="3" fill="none" strokeLinecap="round" opacity="0.5"/></svg>,
-
+  apple: ({s=ICON_SIZE}) => <svg width={s} height={s} viewBox="0 0 56 56"><path d="M28 14 Q34 6 40 10" stroke="#4A9A30" strokeWidth="2.5" fill="none" strokeLinecap="round"/><path d="M14 24 Q10 14 20 13 Q24 12 28 16 Q32 12 36 13 Q46 14 42 24 Q40 36 28 46 Q16 36 14 24Z" fill="#FF4444"/></svg>,
   banana: ({s=ICON_SIZE}) => <svg width={s} height={s} viewBox="0 0 56 56"><path d="M16 42 Q12 26 20 16 Q28 8 40 12 Q44 14 42 18 Q38 16 30 20 Q20 26 22 42Z" fill="#FFE048"/><path d="M18 40 Q14 26 22 17 Q30 10 40 14" stroke="#F0C020" strokeWidth="2.5" fill="none" strokeLinecap="round"/></svg>,
-
   strawberry: ({s=ICON_SIZE}) => <svg width={s} height={s} viewBox="0 0 56 56"><path d="M28 12 Q34 10 36 14 Q38 10 42 12 Q46 18 42 24 Q38 32 28 46 Q18 32 14 24 Q10 18 14 12 Q18 10 20 14 Q22 10 28 12Z" fill="#FF3355"/><circle cx="22" cy="24" r="2" fill="#FFB0B8"/><circle cx="30" cy="20" r="2" fill="#FFB0B8"/><circle cx="33" cy="30" r="2" fill="#FFB0B8"/><path d="M24 12 Q28 8 32 12" stroke="#4A9A30" strokeWidth="2.5" fill="none" strokeLinecap="round"/></svg>,
-
   watermelon: ({s=ICON_SIZE}) => <svg width={s} height={s} viewBox="0 0 56 56"><path d="M10 38 Q10 16 28 12 Q46 16 46 38Z" fill="#FF4466"/><path d="M10 38 Q10 36 28 36 Q46 36 46 38Z" fill="#5DBB63"/><path d="M13 36 Q13 18 28 14 Q43 18 43 36Z" fill="#FF6680"/><circle cx="22" cy="26" r="2" fill="#222"/><circle cx="30" cy="22" r="2" fill="#222"/><circle cx="34" cy="30" r="2" fill="#222"/></svg>,
-
   cake: ({s=ICON_SIZE}) => <svg width={s} height={s} viewBox="0 0 56 56"><rect x="10" y="32" width="36" height="16" rx="4" fill="#FFB3C1"/><rect x="14" y="24" width="28" height="10" rx="3" fill="#FFF0A0"/><rect x="18" y="38" width="4" height="8" rx="2" fill="#FF6699"/><rect x="26" y="38" width="4" height="8" rx="2" fill="#66AAFF"/><rect x="34" y="38" width="4" height="8" rx="2" fill="#FF9933"/><rect x="24" y="16" width="4" height="10" rx="2" fill="#A07050"/><ellipse cx="26" cy="15" rx="3" ry="4" fill="#FF6622"/><circle cx="26" cy="12" r="1.5" fill="#FFD700"/></svg>,
-
-  icecream: ({s=ICON_SIZE}) => <svg width={s} height={s} viewBox="0 0 56 56"><polygon points="28,50 18,28 38,28" fill="#F0C060"/><ellipse cx="28" cy="26" rx="14" ry="10" fill="#FF8FAB"/><ellipse cx="22" cy="22" rx="9" ry="7" fill="#FF6B90" opacity="0.8"/><ellipse cx="34" cy="22" rx="8" ry="6" fill="#FFB0C8" opacity="0.6"/><circle cx="30" cy="20" r="3" fill="#FFD700"/><circle cx="22" cy="24" r="2" fill="#FF3366" opacity="0.7"/></svg>,
-
-  pizza: ({s=ICON_SIZE}) => <svg width={s} height={s} viewBox="0 0 56 56"><path d="M28 10 L8 44 Q28 50 48 44 Z" fill="#FFC850"/><path d="M28 10 L8 44 Q18 46 28 46Z" fill="#FF9B20" opacity="0.5"/><circle cx="22" cy="36" r="3.5" fill="#FF3333"/><circle cx="32" cy="30" r="3.5" fill="#FF3333"/><circle cx="28" cy="40" r="3" fill="#FF3333"/><path d="M8 44 Q28 50 48 44" stroke="#CC7700" strokeWidth="3" fill="none"/></svg>,
-
-  donut: ({s=ICON_SIZE}) => <svg width={s} height={s} viewBox="0 0 56 56"><circle cx="28" cy="28" r="20" fill="#F0C060"/><circle cx="28" cy="28" r="9" fill="#FFF8E7"/><circle cx="28" cy="28" r="20" fill="none" stroke="#E0A040" strokeWidth="1"/><path d="M12 22 Q28 14 44 22" stroke="#FF6699" strokeWidth="5" strokeLinecap="round" fill="none" opacity="0.8"/><circle cx="20" cy="17" r="2.5" fill="#66DDFF"/><circle cx="34" cy="16" r="2.5" fill="#FF9966"/><circle cx="40" cy="22" r="2.5" fill="#AAFF66"/></svg>,
-
-  carrot: ({s=ICON_SIZE}) => <svg width={s} height={s} viewBox="0 0 56 56"><path d="M28 44 Q20 32 22 18 Q26 10 30 18 Q32 32 28 44Z" fill="#FF7722"/><path d="M22 18 Q18 14 14 12 Q16 18 22 20"/><path d="M28 14 Q28 8 26 6 Q26 12 26 16"/><path d="M30 18 Q36 14 40 12 Q38 18 32 20"/><path d="M14 12 Q18 14 22 20" stroke="#5DBB63" strokeWidth="3" fill="none" strokeLinecap="round"/><path d="M26 6 Q26 10 26 16" stroke="#5DBB63" strokeWidth="3" fill="none" strokeLinecap="round"/><path d="M40 12 Q36 14 30 20" stroke="#5DBB63" strokeWidth="3" fill="none" strokeLinecap="round"/></svg>,
-
-  grape: ({s=ICON_SIZE}) => <svg width={s} height={s} viewBox="0 0 56 56"><path d="M28 10 Q28 16 28 20" stroke="#6A4C9C" strokeWidth="2.5" fill="none"/><path d="M28 10 Q22 8 18 12" stroke="#5DBB63" strokeWidth="2.5" fill="none" strokeLinecap="round"/><circle cx="20" cy="22" r="7" fill="#9B6BC4"/><circle cx="36" cy="22" r="7" fill="#9B6BC4"/><circle cx="28" cy="30" r="7" fill="#7A4BA0"/><circle cx="14" cy="32" r="7" fill="#9B6BC4"/><circle cx="42" cy="32" r="7" fill="#9B6BC4"/><circle cx="22" cy="42" r="7" fill="#7A4BA0"/><circle cx="34" cy="42" r="7" fill="#7A4BA0"/></svg>,
-
-  corn: ({s=ICON_SIZE}) => <svg width={s} height={s} viewBox="0 0 56 56"><ellipse cx="28" cy="30" rx="12" ry="18" fill="#FFD700"/><path d="M20 18 Q16 10 14 8 Q22 12 22 20" fill="#5DBB63" opacity="0.9"/><path d="M28 16 Q28 8 28 6 Q32 10 30 18" fill="#5DBB63" opacity="0.9"/><path d="M36 18 Q40 10 42 8 Q34 12 34 20" fill="#5DBB63" opacity="0.9"/><ellipse cx="24" cy="26" rx="2.5" ry="3" fill="#FFE55A"/><ellipse cx="30" cy="24" rx="2.5" ry="3" fill="#FFE55A"/><ellipse cx="36" cy="26" rx="2.5" ry="3" fill="#FFE55A"/><ellipse cx="24" cy="32" rx="2.5" ry="3" fill="#F0C000"/><ellipse cx="30" cy="30" rx="2.5" ry="3" fill="#F0C000"/><ellipse cx="36" cy="32" rx="2.5" ry="3" fill="#F0C000"/><ellipse cx="24" cy="38" rx="2.5" ry="3" fill="#FFE55A"/><ellipse cx="30" cy="36" rx="2.5" ry="3" fill="#FFE55A"/><ellipse cx="36" cy="38" rx="2.5" ry="3" fill="#FFE55A"/></svg>,
-
-  // ── OBJECTS ──────────────────────────────
+  icecream: ({s=ICON_SIZE}) => <svg width={s} height={s} viewBox="0 0 56 56"><polygon points="28,50 18,28 38,28" fill="#F0C060"/><ellipse cx="28" cy="26" rx="14" ry="10" fill="#FF8FAB"/><ellipse cx="22" cy="22" rx="9" ry="7" fill="#FF6B90" opacity="0.8"/><circle cx="30" cy="20" r="3" fill="#FFD700"/></svg>,
+  pizza: ({s=ICON_SIZE}) => <svg width={s} height={s} viewBox="0 0 56 56"><path d="M28 10 L8 44 Q28 50 48 44 Z" fill="#FFC850"/><circle cx="22" cy="36" r="3.5" fill="#FF3333"/><circle cx="32" cy="30" r="3.5" fill="#FF3333"/><path d="M8 44 Q28 50 48 44" stroke="#CC7700" strokeWidth="3" fill="none"/></svg>,
+  donut: ({s=ICON_SIZE}) => <svg width={s} height={s} viewBox="0 0 56 56"><circle cx="28" cy="28" r="20" fill="#F0C060"/><circle cx="28" cy="28" r="9" fill="#FFF8E7"/><path d="M12 22 Q28 14 44 22" stroke="#FF6699" strokeWidth="5" strokeLinecap="round" fill="none" opacity="0.8"/><circle cx="20" cy="17" r="2.5" fill="#66DDFF"/><circle cx="34" cy="16" r="2.5" fill="#FF9966"/></svg>,
+  carrot: ({s=ICON_SIZE}) => <svg width={s} height={s} viewBox="0 0 56 56"><path d="M28 44 Q20 32 22 18 Q26 10 30 18 Q32 32 28 44Z" fill="#FF7722"/><path d="M14 12 Q18 14 22 20" stroke="#5DBB63" strokeWidth="3" fill="none" strokeLinecap="round"/><path d="M26 6 Q26 10 26 16" stroke="#5DBB63" strokeWidth="3" fill="none" strokeLinecap="round"/><path d="M40 12 Q36 14 30 20" stroke="#5DBB63" strokeWidth="3" fill="none" strokeLinecap="round"/></svg>,
+  grape: ({s=ICON_SIZE}) => <svg width={s} height={s} viewBox="0 0 56 56"><circle cx="20" cy="22" r="7" fill="#9B6BC4"/><circle cx="36" cy="22" r="7" fill="#9B6BC4"/><circle cx="28" cy="30" r="7" fill="#7A4BA0"/><circle cx="14" cy="32" r="7" fill="#9B6BC4"/><circle cx="42" cy="32" r="7" fill="#9B6BC4"/><circle cx="22" cy="42" r="7" fill="#7A4BA0"/><circle cx="34" cy="42" r="7" fill="#7A4BA0"/></svg>,
+  corn: ({s=ICON_SIZE}) => <svg width={s} height={s} viewBox="0 0 56 56"><ellipse cx="28" cy="30" rx="12" ry="18" fill="#FFD700"/><ellipse cx="24" cy="26" rx="2.5" ry="3" fill="#FFE55A"/><ellipse cx="30" cy="24" rx="2.5" ry="3" fill="#FFE55A"/><ellipse cx="36" cy="26" rx="2.5" ry="3" fill="#FFE55A"/><ellipse cx="24" cy="32" rx="2.5" ry="3" fill="#F0C000"/><ellipse cx="30" cy="30" rx="2.5" ry="3" fill="#F0C000"/><ellipse cx="36" cy="32" rx="2.5" ry="3" fill="#F0C000"/></svg>,
   star: ({s=ICON_SIZE}) => <svg width={s} height={s} viewBox="0 0 56 56"><polygon points="28,8 33,22 48,22 36,31 40,46 28,37 16,46 20,31 8,22 23,22" fill="#FFD700" stroke="#E8A000" strokeWidth="1.5" strokeLinejoin="round"/></svg>,
-
-  heart: ({s=ICON_SIZE}) => <svg width={s} height={s} viewBox="0 0 56 56"><path d="M28 44 Q10 32 10 20 Q10 10 20 10 Q24 10 28 16 Q32 10 36 10 Q46 10 46 20 Q46 32 28 44Z" fill="#FF3355"/><path d="M16 14 Q12 18 14 26" stroke="#FF6677" strokeWidth="3" fill="none" strokeLinecap="round" opacity="0.6"/></svg>,
-
-  rainbow: ({s=ICON_SIZE}) => <svg width={s} height={s} viewBox="0 0 56 56"><path d="M8 38 Q8 16 28 16 Q48 16 48 38" stroke="#FF3333" strokeWidth="4" fill="none" strokeLinecap="round"/><path d="M11 38 Q11 19 28 19 Q45 19 45 38" stroke="#FF9900" strokeWidth="4" fill="none" strokeLinecap="round"/><path d="M14 38 Q14 22 28 22 Q42 22 42 38" stroke="#FFE000" strokeWidth="4" fill="none" strokeLinecap="round"/><path d="M17 38 Q17 25 28 25 Q39 25 39 38" stroke="#33CC33" strokeWidth="4" fill="none" strokeLinecap="round"/><path d="M20 38 Q20 28 28 28 Q36 28 36 38" stroke="#3399FF" strokeWidth="4" fill="none" strokeLinecap="round"/><path d="M23 38 Q23 31 28 31 Q33 31 33 38" stroke="#9933FF" strokeWidth="4" fill="none" strokeLinecap="round"/><ellipse cx="14" cy="40" rx="8" ry="5" fill="#fff" opacity="0.85"/><ellipse cx="42" cy="40" rx="8" ry="5" fill="#fff" opacity="0.85"/></svg>,
-
-  rocket: ({s=ICON_SIZE}) => <svg width={s} height={s} viewBox="0 0 56 56"><path d="M28 8 Q38 14 38 30 L34 34 L22 34 L18 30 Q18 14 28 8Z" fill="#4488FF"/><circle cx="28" cy="22" r="6" fill="#99CCFF"/><circle cx="28" cy="22" r="3.5" fill="#224488"/><polygon points="18,30 12,44 22,36" fill="#FF4422"/><polygon points="38,30 44,44 34,36" fill="#FF4422"/><ellipse cx="28" cy="36" rx="8" ry="4" fill="#FF6622"/></svg>,
-
+  heart: ({s=ICON_SIZE}) => <svg width={s} height={s} viewBox="0 0 56 56"><path d="M28 44 Q10 32 10 20 Q10 10 20 10 Q24 10 28 16 Q32 10 36 10 Q46 10 46 20 Q46 32 28 44Z" fill="#FF3355"/></svg>,
+  rainbow: ({s=ICON_SIZE}) => <svg width={s} height={s} viewBox="0 0 56 56"><path d="M8 38 Q8 16 28 16 Q48 16 48 38" stroke="#FF3333" strokeWidth="4" fill="none" strokeLinecap="round"/><path d="M14 38 Q14 22 28 22 Q42 22 42 38" stroke="#FFE000" strokeWidth="4" fill="none" strokeLinecap="round"/><path d="M20 38 Q20 28 28 28 Q36 28 36 38" stroke="#3399FF" strokeWidth="4" fill="none" strokeLinecap="round"/></svg>,
+  rocket: ({s=ICON_SIZE}) => <svg width={s} height={s} viewBox="0 0 56 56"><path d="M28 8 Q38 14 38 30 L34 34 L22 34 L18 30 Q18 14 28 8Z" fill="#4488FF"/><circle cx="28" cy="22" r="6" fill="#99CCFF"/><circle cx="28" cy="22" r="3.5" fill="#224488"/><polygon points="18,30 12,44 22,36" fill="#FF4422"/><polygon points="38,30 44,44 34,36" fill="#FF4422"/></svg>,
   car: ({s=ICON_SIZE}) => <svg width={s} height={s} viewBox="0 0 56 56"><rect x="8" y="30" width="40" height="14" rx="4" fill="#4488FF"/><path d="M16 30 Q18 20 22 18 L34 18 Q38 20 40 30Z" fill="#66AAFF"/><rect x="18" y="20" width="8" height="8" rx="2" fill="#99DDFF"/><rect x="30" y="20" width="8" height="8" rx="2" fill="#99DDFF"/><circle cx="16" cy="44" r="6" fill="#333"/><circle cx="40" cy="44" r="6" fill="#333"/><circle cx="16" cy="44" r="3" fill="#999"/><circle cx="40" cy="44" r="3" fill="#999"/></svg>,
-
-  balloon: ({s=ICON_SIZE}) => <svg width={s} height={s} viewBox="0 0 56 56"><ellipse cx="28" cy="24" rx="16" ry="18" fill="#FF6B6B"/><path d="M24 42 Q28 46 32 42" stroke="#FF6B6B" strokeWidth="2.5" fill="none" strokeLinecap="round"/><line x1="28" y1="46" x2="28" y2="52" stroke="#888" strokeWidth="1.5"/><path d="M18 18 Q20 14 26 16" stroke="#FF9999" strokeWidth="2.5" fill="none" strokeLinecap="round" opacity="0.7"/></svg>,
-
+  balloon: ({s=ICON_SIZE}) => <svg width={s} height={s} viewBox="0 0 56 56"><ellipse cx="28" cy="24" rx="16" ry="18" fill="#FF6B6B"/><path d="M24 42 Q28 46 32 42" stroke="#FF6B6B" strokeWidth="2.5" fill="none" strokeLinecap="round"/><line x1="28" y1="46" x2="28" y2="52" stroke="#888" strokeWidth="1.5"/></svg>,
   sun: ({s=ICON_SIZE}) => <svg width={s} height={s} viewBox="0 0 56 56"><circle cx="28" cy="28" r="12" fill="#FFD700"/>{[0,45,90,135,180,225,270,315].map((a,i)=><line key={i} x1={28+16*Math.cos(a*Math.PI/180)} y1={28+16*Math.sin(a*Math.PI/180)} x2={28+22*Math.cos(a*Math.PI/180)} y2={28+22*Math.sin(a*Math.PI/180)} stroke="#FFD700" strokeWidth="3" strokeLinecap="round"/>)}<circle cx="28" cy="28" r="10" fill="#FFEE40"/></svg>,
-
-  diamond: ({s=ICON_SIZE}) => <svg width={s} height={s} viewBox="0 0 56 56"><polygon points="28,8 48,24 28,50 8,24" fill="#66DDFF"/><polygon points="28,8 48,24 38,24 22,24 8,24" fill="#33BBEE"/><polygon points="28,8 38,24 28,16 18,24 28,8" fill="#99EEFF"/><polygon points="28,50 48,24 38,24" fill="#2299CC"/><polygon points="28,50 8,24 18,24" fill="#44AADD"/></svg>,
-
-  snowflake: ({s=ICON_SIZE}) => <svg width={s} height={s} viewBox="0 0 56 56">{[0,60,120].map((a,i)=><line key={i} x1={28+22*Math.cos(a*Math.PI/180)} y1={28+22*Math.sin(a*Math.PI/180)} x2={28-22*Math.cos(a*Math.PI/180)} y2={28-22*Math.sin(a*Math.PI/180)} stroke="#66AAFF" strokeWidth="3.5" strokeLinecap="round"/>)}{[30,90,150].map((a,i)=><>{[1,-1].map((d,j)=><><line key={`${i}-${j}-1`} x1={28+10*Math.cos(a*Math.PI/180)} y1={28+10*Math.sin(a*Math.PI/180)} x2={28+14*Math.cos((a+d*50)*Math.PI/180)} y2={28+14*Math.sin((a+d*50)*Math.PI/180)} stroke="#66AAFF" strokeWidth="2.5" strokeLinecap="round"/><line key={`${i}-${j}-2`} x1={28-10*Math.cos(a*Math.PI/180)} y1={28-10*Math.sin(a*Math.PI/180)} x2={28-14*Math.cos((a+d*50)*Math.PI/180)} y2={28-14*Math.sin((a+d*50)*Math.PI/180)} stroke="#66AAFF" strokeWidth="2.5" strokeLinecap="round"/></>)}</>)}<circle cx="28" cy="28" r="4" fill="#4488FF"/></svg>,
-
-  flower: ({s=ICON_SIZE}) => <svg width={s} height={s} viewBox="0 0 56 56">{[0,60,120,180,240,300].map((a,i)=><ellipse key={i} cx={28+13*Math.cos(a*Math.PI/180)} cy={28+13*Math.sin(a*Math.PI/180)} rx="7" ry="10" fill="#FF88CC" transform={`rotate(${a},${28+13*Math.cos(a*Math.PI/180)},${28+13*Math.sin(a*Math.PI/180)})`}/>)}<circle cx="28" cy="28" r="9" fill="#FFD700"/><circle cx="28" cy="28" r="5" fill="#FF9900"/></svg>,
-
-  moon: ({s=ICON_SIZE}) => <svg width={s} height={s} viewBox="0 0 56 56"><path d="M32 10 Q44 18 44 30 Q44 44 30 48 Q18 48 12 38 Q22 40 28 32 Q36 22 32 10Z" fill="#FFD700"/><circle cx="36" cy="18" r="2.5" fill="#FFE888"/><circle cx="34" cy="36" r="2" fill="#FFE888"/><circle cx="24" cy="22" r="1.5" fill="#FFE888"/></svg>,
-
-  crown: ({s=ICON_SIZE}) => <svg width={s} height={s} viewBox="0 0 56 56"><path d="M8 38 L8 22 L18 32 L28 10 L38 32 L48 22 L48 38 Z" fill="#FFD700"/><rect x="8" y="38" width="40" height="8" rx="3" fill="#E8A000"/><circle cx="28" cy="16" r="4" fill="#FF3355"/><circle cx="10" cy="26" r="3" fill="#66AAFF"/><circle cx="46" cy="26" r="3" fill="#66AAFF"/></svg>,
-
+  diamond: ({s=ICON_SIZE}) => <svg width={s} height={s} viewBox="0 0 56 56"><polygon points="28,8 48,24 28,50 8,24" fill="#66DDFF"/><polygon points="28,8 48,24 38,24 22,24 8,24" fill="#33BBEE"/></svg>,
+  snowflake: ({s=ICON_SIZE}) => <svg width={s} height={s} viewBox="0 0 56 56">{[0,60,120].map((a,i)=><line key={i} x1={28+22*Math.cos(a*Math.PI/180)} y1={28+22*Math.sin(a*Math.PI/180)} x2={28-22*Math.cos(a*Math.PI/180)} y2={28-22*Math.sin(a*Math.PI/180)} stroke="#66AAFF" strokeWidth="3.5" strokeLinecap="round"/>)}<circle cx="28" cy="28" r="4" fill="#4488FF"/></svg>,
+  flower: ({s=ICON_SIZE}) => <svg width={s} height={s} viewBox="0 0 56 56">{[0,60,120,180,240,300].map((a,i)=><ellipse key={i} cx={28+13*Math.cos(a*Math.PI/180)} cy={28+13*Math.sin(a*Math.PI/180)} rx="7" ry="10" fill="#FF88CC" transform={`rotate(${a},${28+13*Math.cos(a*Math.PI/180)},${28+13*Math.sin(a*Math.PI/180)})`}/>)}<circle cx="28" cy="28" r="9" fill="#FFD700"/></svg>,
+  moon: ({s=ICON_SIZE}) => <svg width={s} height={s} viewBox="0 0 56 56"><path d="M32 10 Q44 18 44 30 Q44 44 30 48 Q18 48 12 38 Q22 40 28 32 Q36 22 32 10Z" fill="#FFD700"/></svg>,
+  crown: ({s=ICON_SIZE}) => <svg width={s} height={s} viewBox="0 0 56 56"><path d="M8 38 L8 22 L18 32 L28 10 L38 32 L48 22 L48 38 Z" fill="#FFD700"/><rect x="8" y="38" width="40" height="8" rx="3" fill="#E8A000"/><circle cx="28" cy="16" r="4" fill="#FF3355"/></svg>,
   lightning: ({s=ICON_SIZE}) => <svg width={s} height={s} viewBox="0 0 56 56"><path d="M32 8 L18 30 L28 30 L22 50 L40 24 L30 24 Z" fill="#FFD700" stroke="#E8A000" strokeWidth="1.5" strokeLinejoin="round"/></svg>,
-
-  cloud: ({s=ICON_SIZE}) => <svg width={s} height={s} viewBox="0 0 56 56"><circle cx="20" cy="30" r="10" fill="#DDEEFF"/><circle cx="30" cy="26" r="13" fill="#DDEEFF"/><circle cx="40" cy="30" r="9" fill="#DDEEFF"/><rect x="11" y="30" width="36" height="12" rx="4" fill="#DDEEFF"/><circle cx="20" cy="30" r="9" fill="#EEF5FF"/><circle cx="30" cy="26" r="12" fill="#EEF5FF"/></svg>,
-
+  cloud: ({s=ICON_SIZE}) => <svg width={s} height={s} viewBox="0 0 56 56"><circle cx="20" cy="30" r="10" fill="#DDEEFF"/><circle cx="30" cy="26" r="13" fill="#DDEEFF"/><circle cx="40" cy="30" r="9" fill="#DDEEFF"/><rect x="11" y="30" width="36" height="12" rx="4" fill="#DDEEFF"/></svg>,
   music: ({s=ICON_SIZE}) => <svg width={s} height={s} viewBox="0 0 56 56"><path d="M22 38 L22 18 L42 14 L42 34" stroke="#9966FF" strokeWidth="3" fill="none" strokeLinecap="round" strokeLinejoin="round"/><circle cx="18" cy="40" r="6" fill="#9966FF"/><circle cx="38" cy="36" r="6" fill="#9966FF"/><path d="M22 24 L42 20" stroke="#9966FF" strokeWidth="2.5" fill="none"/></svg>,
 };
 
-// Pool groupings
 const POOLS = {
-  // Each theme uses exactly 21 unique icons from its own category
-  animals: ['cat','dog','bunny','bear','fox','pig','chick','frog','panda','penguin','lion',
-            'flower','star','heart','rainbow','balloon','sun','moon','crown','snowflake','diamond'],
-  foods:   ['apple','banana','strawberry','watermelon','cake','icecream','pizza','donut','carrot','grape','corn',
-            'heart','star','rainbow','balloon','sun','moon','crown','snowflake','diamond','flower'],
-  objects: ['star','heart','rainbow','rocket','car','balloon','sun','diamond','snowflake','flower','moon',
-            'crown','lightning','cloud','music','cat','dog','bunny','bear','chick','frog'],
+  animals: ['cat','dog','bunny','bear','fox','pig','chick','frog','panda','penguin','lion','flower','star','heart','rainbow','balloon','sun','moon','crown','snowflake','diamond'],
+  foods:   ['apple','banana','strawberry','watermelon','cake','icecream','pizza','donut','carrot','grape','corn','heart','star','rainbow','balloon','sun','moon','crown','snowflake','diamond','flower'],
+  objects: ['star','heart','rainbow','rocket','car','balloon','sun','diamond','snowflake','flower','moon','crown','lightning','cloud','music','cat','dog','bunny','bear','chick','frog'],
 };
 
 const THEMES = {
@@ -147,65 +170,43 @@ const THEMES = {
 };
 
 const GAME_MODES = {
-  3:{name:'簡單',icon:'🐣',iconSize:70,
-    data:[[0,1,2],[0,3,4],[0,5,6],[1,3,5],[1,4,6],[2,3,6],[2,4,5]]},
-  4:{name:'中等',icon:'🐰',iconSize:58,
-    data:[[0,1,2,3],[0,4,5,6],[0,7,8,9],[0,10,11,12],[1,4,7,10],[1,5,8,11],[1,6,9,12],[2,4,8,12],[2,5,9,10],[2,6,7,11],[3,4,9,11],[3,5,7,12],[3,6,8,10]]},
-  5:{name:'挑戰',icon:'🦁',iconSize:50,
-    data:[[0,1,2,3,4],[0,5,6,7,8],[0,9,10,11,12],[0,13,14,15,16],[0,17,18,19,20],[1,5,9,13,17],[1,6,10,14,18],[1,7,11,15,19],[1,8,12,16,20],[2,5,10,15,20],[2,6,9,16,19],[2,7,12,13,18],[2,8,11,14,17],[3,5,11,16,18],[3,6,12,15,17],[3,7,9,14,20],[3,8,10,13,19],[4,5,12,14,19],[4,6,11,13,20],[4,7,10,16,17],[4,8,9,15,18]]},
+  3:{name:'簡單',icon:'🐣',iconSize:70,data:[[0,1,2],[0,3,4],[0,5,6],[1,3,5],[1,4,6],[2,3,6],[2,4,5]]},
+  4:{name:'中等',icon:'🐰',iconSize:58,data:[[0,1,2,3],[0,4,5,6],[0,7,8,9],[0,10,11,12],[1,4,7,10],[1,5,8,11],[1,6,9,12],[2,4,8,12],[2,5,9,10],[2,6,7,11],[3,4,9,11],[3,5,7,12],[3,6,8,10]]},
+  5:{name:'挑戰',icon:'🦁',iconSize:50,data:[[0,1,2,3,4],[0,5,6,7,8],[0,9,10,11,12],[0,13,14,15,16],[0,17,18,19,20],[1,5,9,13,17],[1,6,10,14,18],[1,7,11,15,19],[1,8,12,16,20],[2,5,10,15,20],[2,6,9,16,19],[2,7,12,13,18],[2,8,11,14,17],[3,5,11,16,18],[3,6,12,15,17],[3,7,9,14,20],[3,8,10,13,19],[4,5,12,14,19],[4,6,11,13,20],[4,7,10,16,17],[4,8,9,15,18]]},
 };
 
 const shuffle = arr => { const a=[...arr]; for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]} return a; };
 
-// Layout: all icons on a ring, evenly spaced — no overlaps possible
 function getLayout(n, cardSize) {
   const cx = cardSize/2, cy = cardSize/2;
-  // Radius chosen so icons fit inside the circle without overlap
-  // Each icon is iconSize px; min arc distance must be > iconSize
-  // circumference = 2*PI*r, n gaps, so r > n*iconSize/(2*PI)
-  // Use a fixed safe radius based on card size
   const radius = cardSize * (n===3 ? 0.30 : n===4 ? 0.32 : 0.33);
-  // Rotate the whole ring by a random offset each time
   const startAngle = Math.random() * 2 * Math.PI;
   return Array.from({length:n}, (_,i) => {
     const angle = startAngle + (i / n) * 2 * Math.PI;
-    // Small jitter along radial direction only (won't cause overlap)
     const r = radius + (Math.random()-0.5) * cardSize * 0.04;
-    const x = cx + r * Math.cos(angle);
-    const y = cy + r * Math.sin(angle);
-    const rot = Math.floor(Math.random()*360);
-    const scale = 0.85 + Math.random()*0.20;
-    return {x, y, rot, scale};
+    return {
+      x: cx + r * Math.cos(angle),
+      y: cy + r * Math.sin(angle),
+      rot: Math.floor(Math.random()*360),
+      scale: 0.85 + Math.random()*0.20
+    };
   });
 }
 
-// ─── Card Component ────────────────────────
 const Card = React.memo(({symbolNames, iconSize, onSymbolClick, highlight}) => {
   const n = symbolNames.length;
   const cardSize = Math.min(window.innerWidth * 0.42, window.innerHeight * 0.36, 210);
   const layoutKey = symbolNames.join(',');
   const layout = React.useMemo(() => getLayout(n, cardSize), [n, cardSize, layoutKey]);
-  
   return (
-    <div className="card-circle card-enter" style={{
-      width:cardSize, height:cardSize,
-      background:'#FFFFFF',
-      border:'4px solid #E0D0FF',
-      flexShrink:0
-    }}>
+    <div className="card-circle card-enter" style={{width:cardSize,height:cardSize,background:'#FFFFFF',border:'4px solid #E0D0FF',flexShrink:0}}>
       {symbolNames.map((name, i) => {
         const {x,y,rot,scale} = layout[i];
         const Icon = icons[name];
-        const isMatch = highlight === name;
         return (
-          <div key={name+i} className={`icon-btn ${isMatch ? 'correct-glow' : ''}`}
+          <div key={name+i} className={`icon-btn ${highlight===name?'correct-glow':''}`}
             onClick={() => onSymbolClick(name)}
-            style={{
-              position:'absolute',
-              left: x, top: y,
-              transform:`translate(-50%,-50%) rotate(${rot}deg) scale(${scale})`,
-              transition:'transform 0.15s',
-            }}>
+            style={{position:'absolute',left:x,top:y,transform:`translate(-50%,-50%) rotate(${rot}deg) scale(${scale})`}}>
             <Icon s={iconSize}/>
           </div>
         );
@@ -214,7 +215,6 @@ const Card = React.memo(({symbolNames, iconSize, onSymbolClick, highlight}) => {
   );
 });
 
-// ─── App ──────────────────────────────────
 const App = () => {
   const [state, setState] = React.useState('menu');
   const [themeId, setThemeId] = React.useState('animals');
@@ -228,38 +228,39 @@ const App = () => {
   const [errorMsg, setErrorMsg] = React.useState('');
 
   const startGame = (d) => {
+    // 🔊 手機解鎖音效：Tone.js 需要使用者觸碰後才能啟動
+    startAudio();
     setDiff(d);
-    // IMPORTANT: Do NOT shuffle the pool — pool indices must stay fixed to match deck data
     const pool = [...POOLS[themeId]];
     setSymbolPool(pool);
-    // Only shuffle the deck ORDER (which pair to show first/second/etc)
-    const rawDeck = shuffle([...GAME_MODES[d].data]);
-    setDeck(rawDeck);
+    setDeck(shuffle([...GAME_MODES[d].data]));
     setIdx(0); setScore(0); setHighlight(null); setErrorMsg('');
     setState('playing');
   };
 
   const handleClick = (name) => {
     if (state !== 'playing' || highlight) return;
-    const cardA = deck[idx], cardB = deck[idx+1];
     const si = symbolPool.indexOf(name);
-    if (cardA.includes(si) && cardB.includes(si)) {
+    if (deck[idx].includes(si) && deck[idx+1].includes(si)) {
+      playCorrect(); // ✅ 答對音效
       setHighlight(name);
       confetti({particleCount:60,spread:70,origin:{y:0.6},colors:['#FFD93D','#FF6B6B','#4488FF','#5DBB63']});
-      setTimeout(()=>{
+      setTimeout(() => {
         setHighlight(null);
         setScore(s => s + 1);
         if (idx+2 >= deck.length) {
+          playWin(); // 🎉 破關音效
           setState('end');
           confetti({particleCount:180,spread:110,origin:{y:0.5}});
         } else {
-          setIdx(i=>i+1);
+          setIdx(i => i+1);
         }
       }, 750);
     } else {
-      setShakeSig(s=>s+1);
+      playWrong(); // ❌ 答錯音效
+      setShakeSig(s => s+1);
       setErrorMsg('再找找看！🔍');
-      setTimeout(()=>setErrorMsg(''), 1200);
+      setTimeout(() => setErrorMsg(''), 1200);
     }
   };
 
@@ -268,52 +269,34 @@ const App = () => {
     cardASymbols = deck[idx].map(i=>symbolPool[i]);
     cardBSymbols = deck[idx+1].map(i=>symbolPool[i]);
   }
-
   const iconSize = GAME_MODES[diff]?.iconSize || 58;
 
   return (
     <div style={{display:'flex',flexDirection:'column',height:'100%',maxWidth:700,margin:'0 auto',position:'relative'}}>
-      
-      {/* Error toast */}
       {errorMsg && (
-        <div style={{position:'fixed',top:'50%',left:'50%',transform:'translate(-50%,-50%)',
-          background:'#FF6B6B',color:'#fff',padding:'12px 28px',borderRadius:50,
-          fontSize:20,fontWeight:800,boxShadow:'0 6px 24px rgba(255,107,107,0.5)',
-          zIndex:100,pointerEvents:'none',whiteSpace:'nowrap'}}>
+        <div style={{position:'fixed',top:'50%',left:'50%',transform:'translate(-50%,-50%)',background:'#FF6B6B',color:'#fff',padding:'12px 28px',borderRadius:50,fontSize:20,fontWeight:800,boxShadow:'0 6px 24px rgba(255,107,107,0.5)',zIndex:100,pointerEvents:'none',whiteSpace:'nowrap'}}>
           {errorMsg}
         </div>
       )}
-
-      {/* Header */}
       <header style={{display:'flex',justifyContent:'space-between',alignItems:'center',padding:'12px 16px 4px',flexShrink:0}}>
-        <div onClick={()=>setState('menu')} style={{cursor:'pointer',display:'flex',alignItems:'center',gap:6}}>
+        <div onClick={()=>setState('menu')} style={{cursor:'pointer'}}>
           <span style={{fontSize:22,fontWeight:900,color:'#FF6B6B'}}>幼兒版 Spot It!</span>
         </div>
-        {state!=='menu' && (
-          <div className="score-pill" style={{fontSize:18}}>
-            ⭐ {score}
-          </div>
-        )}
+        {state!=='menu' && <div className="score-pill" style={{fontSize:18}}>⭐ {score}</div>}
       </header>
 
-      {/* Main */}
       <main style={{flex:1,display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',padding:'8px 16px',overflow:'hidden'}}>
-
-        {/* MENU */}
         {state==='menu' && (
           <div className="fade-in" style={{width:'100%',maxWidth:500,display:'flex',flexDirection:'column',gap:20,alignItems:'center'}}>
-            <div style={{textAlign:'center',marginBottom:4}}>
-              <div style={{fontSize:38,fontWeight:900,color:'#FF6B6B',lineHeight:1.2}}>找找看！🔍</div>
+            <div style={{textAlign:'center'}}>
+              <div style={{fontSize:38,fontWeight:900,color:'#FF6B6B'}}>找找看！🔍</div>
               <div style={{fontSize:14,color:'#aaa',marginTop:4}}>找出兩張牌上相同的圖案</div>
             </div>
-            
-            {/* Theme */}
             <div style={{width:'100%'}}>
               <div style={{fontSize:13,fontWeight:800,color:'#bbb',textAlign:'center',marginBottom:10}}>選擇主題</div>
               <div style={{display:'flex',gap:10,justifyContent:'center'}}>
                 {Object.values(THEMES).map(t=>(
-                  <button key={t.id} className={`theme-btn ${themeId===t.id?'active':''}`}
-                    onClick={()=>setThemeId(t.id)}
+                  <button key={t.id} className={`theme-btn ${themeId===t.id?'active':''}`} onClick={()=>setThemeId(t.id)}
                     style={{padding:'10px 14px',display:'flex',flexDirection:'column',alignItems:'center',gap:4,minWidth:80}}>
                     {t.icon}
                     <span style={{fontSize:12,fontWeight:800,color:themeId===t.id?'#996600':'#888'}}>{t.name}</span>
@@ -321,10 +304,7 @@ const App = () => {
                 ))}
               </div>
             </div>
-
             <div style={{width:200,height:2,background:'#f0e8d0',borderRadius:2}}/>
-
-            {/* Difficulty */}
             <div style={{width:'100%'}}>
               <div style={{fontSize:13,fontWeight:800,color:'#bbb',textAlign:'center',marginBottom:10}}>選難度開始</div>
               <div style={{display:'flex',gap:10,justifyContent:'center'}}>
@@ -341,58 +321,37 @@ const App = () => {
           </div>
         )}
 
-        {/* PLAYING */}
         {state==='playing' && (
-          <div key={shakeSig} className={shakeSig>0?'shake-anim':''} style={{
-            display:'flex',flexDirection:'column',alignItems:'center',
-            gap:16,width:'100%'
-          }}>
-            <div style={{fontSize:12,fontWeight:700,color:'#ccc'}}>
-              {idx+1} / {deck.length-1} 組
-            </div>
+          <div key={shakeSig} className={shakeSig>0?'shake-anim':''} style={{display:'flex',flexDirection:'column',alignItems:'center',gap:16,width:'100%'}}>
+            <div style={{fontSize:12,fontWeight:700,color:'#ccc'}}>{idx+1} / {deck.length-1} 組</div>
             <div style={{display:'flex',flexDirection:'row',gap:16,alignItems:'center',justifyContent:'center',flexWrap:'wrap'}}>
               <Card key={'A-'+idx} symbolNames={cardASymbols} iconSize={iconSize} onSymbolClick={handleClick} highlight={highlight}/>
-              <div style={{fontSize:28,fontWeight:900,color:'#FFD93D',flexShrink:0,textShadow:'0 2px 8px rgba(0,0,0,0.15)'}}>vs</div>
+              <div style={{fontSize:28,fontWeight:900,color:'#FFD93D',flexShrink:0}}>vs</div>
               <Card key={'B-'+idx} symbolNames={cardBSymbols} iconSize={iconSize} onSymbolClick={handleClick} highlight={highlight}/>
             </div>
             <div style={{fontSize:13,color:'#ccc',fontWeight:700}}>點擊兩張牌上相同的圖案！</div>
           </div>
         )}
 
-        {/* END */}
         {state==='end' && (
-          <div className="fade-in" style={{
-            background:'#fff',borderRadius:28,padding:'32px 28px',
-            textAlign:'center',maxWidth:320,width:'100%',
-            boxShadow:'0 8px 40px rgba(0,0,0,0.1)',display:'flex',flexDirection:'column',gap:16
-          }}>
+          <div className="fade-in" style={{background:'#fff',borderRadius:28,padding:'32px 28px',textAlign:'center',maxWidth:320,width:'100%',boxShadow:'0 8px 40px rgba(0,0,0,0.1)',display:'flex',flexDirection:'column',gap:16}}>
             <div style={{fontSize:56}}>🎉</div>
             <div style={{fontSize:28,fontWeight:900,color:'#FF6B6B'}}>太棒了！</div>
             <div style={{fontSize:15,color:'#aaa'}}>完成了{GAME_MODES[diff].name}挑戰！</div>
-            <div style={{background:'#FFF8E7',borderRadius:12,padding:'10px 16px',
-              fontSize:18,fontWeight:800,color:'#FF8C42'}}>
+            <div style={{background:'#FFF8E7',borderRadius:12,padding:'10px 16px',fontSize:18,fontWeight:800,color:'#FF8C42'}}>
               配對成功 {score} 組 ⭐
             </div>
-            <button className="btn-main" onClick={()=>startGame(diff)}
-              style={{padding:'12px 24px',fontSize:17,marginTop:4}}>
-              再玩一次 🔄
-            </button>
-            <button className="btn-secondary" onClick={()=>setState('menu')}
-              style={{padding:'10px 24px',fontSize:15}}>
-              回主選單 🏠
-            </button>
+            <button className="btn-main" onClick={()=>startGame(diff)} style={{padding:'12px 24px',fontSize:17,marginTop:4}}>再玩一次 🔄</button>
+            <button className="btn-secondary" onClick={()=>setState('menu')} style={{padding:'10px 24px',fontSize:15}}>回主選單 🏠</button>
           </div>
         )}
       </main>
-
-      <footer style={{textAlign:'center',padding:'6px',color:'#ddd',fontSize:11,flexShrink:0}}>
-        專為幼兒設計 • 訓練觀察力
-      </footer>
+      <footer style={{textAlign:'center',padding:'6px',color:'#ddd',fontSize:11,flexShrink:0}}>專為幼兒設計 • 訓練觀察力</footer>
     </div>
   );
 };
 
 ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
-    </script>
+</script>
 </body>
 </html>
